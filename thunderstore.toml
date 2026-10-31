@@ -2,23 +2,23 @@
 schemaVersion = "0.0.1"
 
 [package]
-namespace = "TeamName"
-name = "PackageName"
-description = "Example mod description"
-websiteUrl = "https://github.com/funlennysub/MycopunkModTemplate"
+namespace = "MiniPrince123"
+name = "Better_Minimap"
+description = "Adds a few QoL features to the minimap."
+websiteUrl = "https://github.com/MiniPrince123/Better_Minimap"
 containsNsfwContent = false
 
 [package.dependencies]
 BepInEx-BepInExPack_Mycopunk = "5.4.2403"
 
 [build]
+outdir = "build"
 icon = "icon.png"
 readme = "README.md"
-outdir = "build"
 
 [[build.copy]]
-source = "bin/Release/netstandard2.1/MycopunkModTemplate.dll"
-target = "BepInEx/plugins/MycopunkModTemplate.dll"
+source = "bin/Release/netstandard2.1/Better_Minimap.dll"
+target = "BepInEx/plugins/Better_Minimap.dll"
 
 [[build.copy]]
 source = "CHANGELOG.md"
@@ -30,9 +30,7 @@ target = "LICENSE"
 
 [publish]
 repository = "https://thunderstore.io"
-communities = [ "mycopunk" ]
+communities = [ "mycopunk", ]
 
 [publish.categories]
-mycopunk = [ "client" ]
-
-
+mycopunk = [ "cosmetic", "client", "qol", "mods"]

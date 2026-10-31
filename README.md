@@ -1,12 +1,23 @@
-# MycopunkModTemplate
+# Better Minimap
 
-## How to use:
+This mod adds several QoL improvements to the minimap, giving you more control over its appearance and behavior.
 
-- Use this as template for your repo
-- Change `AssemblyName` and `Product`
-- Change copyright holder in LICENSE
-- Uncomment and change the path to `Assembly-CSharp.dll` in `.csproj`
-- If you need more stuff like `Unity.TextMeshPro` or `UnityEngine.UI`, just add a reference to them the same way as main
-  dll
-- If you want `Unity.InputSystem`, add this line:
-  - `<PackageReference Include="UnityEngine.Modules" Version="2022.3.5" IncludeAssets="compile" />`
+All features are configurable, allowing you to disable any you don't want.
+
+I'll *probably*™ add more features later on.
+
+
+## Features
+
+- 🔍 **Side Objectives Always Revealed:** Reveals what each side objective is without having to get close to it
+- 🧭 **Locked Minimap Rotation:** Locks the minimap's rotation, keeping north always facing up
+- 📷 **Minimap Zoom:** Adjustable minimap zoom level to your preference
+
+
+## Settings
+
+| Setting                | Mod Default | Base Game Default | Description                                                                |
+|------------------------|-------------|-------------------|----------------------------------------------------------------------------|
+| Reveal Side Objectives | true        | false             | If true, reveals what each side objective is without having to go near it. |
+| North Up               | true        | false             | If true, north will always point upwards.                                  |
+| Zoom Amount            | 180         | 80                | Changes how zoomed in the minimap is. (lower = more zoomed in)             |

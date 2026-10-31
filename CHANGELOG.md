@@ -1,8 +1,11 @@
 # Changelog
 
-## 1.0.0 (2025-08-19)
+
+## 1.0.0
+2026-10-30
 
 ### Features
-* Add MinVer
-* Add thunderstore.toml for [tcli](https://github.com/thunderstore-io/thunderstore-cli)
-* Add LICENSE and CHANGELOG.md
+
+- **Side Objectives Always Revealed:** Reveals what each side objective is without having to get close to it
+- **Locked Minimap Rotation:** Locks the minimap's rotation, keeping north always facing up
+- **Minimap Zoom:** Adjustable minimap zoom level to your preference
