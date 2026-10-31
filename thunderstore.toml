@@ -3,9 +3,9 @@ schemaVersion = "0.0.1"
 
 [package]
 namespace = "MiniPrince123"
-name = "Better_Minimap"
+name = "Mission_list"
 description = "Adds a few QoL features to the minimap."
-websiteUrl = "https://github.com/MiniPrince123/Better_Minimap"
+websiteUrl = "https://github.com/MiniPrince123/Mission_list"
 containsNsfwContent = false
 
 [package.dependencies]
@@ -17,8 +17,8 @@ icon = "icon.png"
 readme = "README.md"
 
 [[build.copy]]
-source = "bin/Release/netstandard2.1/Better_Minimap.dll"
-target = "BepInEx/plugins/Better_Minimap.dll"
+source = "bin/Release/netstandard2.1/Mission_list.dll"
+target = "BepInEx/plugins/Mission_list.dll"
 
 [[build.copy]]
 source = "CHANGELOG.md"

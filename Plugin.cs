@@ -17,11 +17,7 @@ public class Plugin : BaseUnityPlugin
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_NAME} ({MyPluginInfo.PLUGIN_GUID} {MyPluginInfo.PLUGIN_VERSION}) is loaded!");
 
         Configs.Initialize(Config);
-        Logger.LogInfo("Config initialized: " +
-                       $"SideObjectivesRevealed={Configs.SideObjectivesRevealed.Value}, "+
-                       $"NorthUp={Configs.NorthUp.Value}, "+
-                       $"ZoomAmount={Configs.ZoomAmount.Value}" 
-        );
+        Logger.LogInfo("Config initialized");
 
         _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         _harmony.PatchAll();

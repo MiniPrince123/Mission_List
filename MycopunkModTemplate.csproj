@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <ModGuid>miniprince123.better_minimap</ModGuid>
-        <ModName>Better_Minimap</ModName>
+        <ModGuid>miniprince123.mission_list</ModGuid>
+        <ModName>Mission_List</ModName>
         <Authors>MiniPrince123</Authors>
         
         <AssemblyName>$(ModName)</AssemblyName>
@@ -50,6 +50,9 @@
         </Reference>
         <Reference Include="UnityEngine.UI">
             <HintPath>/home/fedorart/.local/share/Steam/steamapps/common/Mycopunk/Mycopunk_Data/Managed/UnityEngine.UI.dll</HintPath>
+        </Reference>
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>/home/fedorart/.local/share/Steam/steamapps/common/Mycopunk/Mycopunk_Data/Managed/Unity.TextMeshPro.dll</HintPath>
         </Reference>
     </ItemGroup>
 </Project>
