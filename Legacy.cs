@@ -61,44 +61,149 @@ internal static class MissionSelectWindowPatch
 
     private static void OnCustomButtonClicked()
     {
-        Debug.Log("Custom button clicked");
-        Debug.Log(customWindow.GetName());
-        Debug.Log(customWindow.GetComponentInChildren<TextMeshProUGUI>(true).text);
-
         if (customWindow == null)
             return;
+
+        Plugin.Logger.LogInfo("Custom button clicked");
         customWindow.SetActive(!customWindow.activeSelf);
     }
     
     private static GameObject customWindow;
     private static void CreateCustomWindow(MissionSelectWindow missionWindow)
     {
-        var replayWindowField =
-            AccessTools.Field(typeof(MissionSelectWindow), "replayWindow");
-        
-        if (replayWindowField == null)
+        var legacyWindowField =
+            AccessTools.Field(typeof(MissionSelectWindow), "legacyWindow");
+
+        if (legacyWindowField == null)
         {
-            Plugin.Logger.LogError("Could not find MissionSelectWindow.replayWindow.");
+            Plugin.Logger.LogError("Could not find MissionSelectWindow.legacyWindow.");
             return;
         }
 
-        var replayWindow =
-            (GameObject)replayWindowField.GetValue(missionWindow);
-        
-        if (replayWindow == null)
+        var legacyWindow = (GameObject)legacyWindowField.GetValue(missionWindow);
+
+        if (legacyWindow == null)
         {
-            Plugin.Logger.LogError("MissionSelectWindow.replayWindow is null.");
+            Plugin.Logger.LogError("MissionSelectWindow.legacyWindow is null.");
             return;
         }
 
         customWindow = Object.Instantiate(
-            replayWindow,
-            replayWindow.transform.parent
+            legacyWindow,
+            legacyWindow.transform.parent
         );
 
         customWindow.name = "MyCustomWindow";
-        customWindow.GetComponentInChildren<TextMeshProUGUI>(true).text = "Mission List";
         customWindow.SetActive(false);
+
+        // ---------------------
+        
+        
+        
+        var originalContainerField =
+            AccessTools.Field(typeof(MissionSelectWindow), "legacyMissionContainer");
+        var originalContainer =
+            (RectTransform)originalContainerField.GetValue(missionWindow);
+        var customContainer = FindClone(originalContainer, legacyWindow, customWindow);
+
+        if (customContainer == null)
+        {
+            Plugin.Logger.LogError("Could not find the custom mission container.");
+            return;
+        }
+
+        PopulateCustomWindow(missionWindow, customContainer);
+    }
+
+    private static RectTransform FindClone(
+        RectTransform original,
+        GameObject originalWindow,
+        GameObject clonedWindow)
+    {
+        string path = GetPath(original, originalWindow.transform);
+        return clonedWindow.transform.Find(path) as RectTransform;
+    }
+
+    private static string GetPath(Transform child, Transform root)
+    {
+        Transform current = child;
+        string path = current.name;
+        while (current.parent != null && current.parent != root)
+        {
+            current = current.parent;
+            path = current.name + "/" + path;
+        }
+
+        return path;
+    }
+
+    private static void PopulateCustomWindow(
+        MissionSelectWindow missionWindow,
+        RectTransform container)
+    {
+        var prefabField =
+            AccessTools.Field(typeof(MissionSelectWindow), "missionButtonPrefab");
+        var prefab = (MissionSelectButton)prefabField.GetValue(missionWindow);
+
+        int buttonIndex = 0;
+        for (int regionIndex = 0;
+             regionIndex < Global.Instance.Regions.Length;
+             regionIndex++)
+        {
+            WorldRegion region = Global.Instance.Regions[regionIndex];
+            if (region == null ||
+                region.LegacyScenes == null ||
+                region.LegacyScenes.Length == 0)
+                continue;
+
+            for (int missionIndex = 0;
+                 missionIndex < Global.Instance.Missions.Length;
+                 missionIndex++)
+            {
+                Mission mission = Global.Instance.Missions[missionIndex];
+                if (!Mission.IsValidMission(mission, region.Flags))
+                    continue;
+
+                int seed = Global.MissionSelectSeed +
+                           (mission.ID.GetHashCode() + 3173) * 5390921 +
+                           regionIndex;
+                SceneData overriddenScene;
+                SceneData scene = mission.OverrideScene(
+                    out overriddenScene,
+                    region,
+                    seed)
+                    ? overriddenScene
+                    : region.LegacyScenes[0];
+
+                MissionSelectButton button;
+                if (buttonIndex < container.childCount)
+                {
+                    button = container.GetChild(buttonIndex)
+                        .GetComponent<MissionSelectButton>();
+                }
+                else
+                {
+                    button = Object.Instantiate(prefab, container);
+                }
+
+                button.gameObject.SetActive(true);
+                button.Setup(
+                    new MissionData(
+                        seed,
+                        mission,
+                        region,
+                        scene,
+                        null,
+                        mission.GetAdditionalData(),
+                        false),
+                    missionWindow,
+                    true);
+                buttonIndex++;
+            }
+        }
+
+        for (int i = buttonIndex; i < container.childCount; i++)
+            container.GetChild(i).gameObject.SetActive(false);
     }
     
     private static void ClearPersistentListeners(UnityEventBase unityEvent)
@@ -119,3 +224,17 @@ internal static class MissionSelectWindowPatch
         ).Invoke(unityEvent, null);
     }
 }
+
+
+// for (int i = 0; i < Global.Instance.Regions.Length; ++i)
+// {
+//     WorldRegion region = Global.Instance.Regions[i];
+//     Planet planet = region.Planet;
+//
+//     this.SetupMissions(
+//         this.GetPlanetData(planet),
+//         region,
+//         ref missionBag,
+//         ref missionBagCount,
+//         ref foundSelectedMission);
+// }
