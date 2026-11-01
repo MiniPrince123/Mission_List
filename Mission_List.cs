@@ -118,7 +118,11 @@ internal static class MissionSelectWindowPatch
         var originalContainer =
             (RectTransform)originalContainerField.GetValue(missionWindow);
         var customContainer = FindClone(originalContainer, legacyWindow, customWindow);
-
+        
+        // 76.0f is too much. couldn't care enough to test decimals
+        // changes the "margin" of the mission buttons in the window
+        customContainer.GetComponent<UnityEngine.UI.GridLayoutGroup>().spacing = new Vector2(75.0f, 75.0f);
+        
         if (customContainer == null)
         {
             Plugin.Logger.LogError("Could not find the custom mission container.");
@@ -202,9 +206,12 @@ internal static class MissionSelectWindowPatch
                 button.gameObject.SetActive(true);
                 button.Setup(missionData, missionWindow, true);
                 // Preserve the original mission button dimensions.
-                ((RectTransform)button.transform).sizeDelta =
-                    ((RectTransform)activeMission.Button.transform).sizeDelta;
-                Plugin.Logger.LogInfo("sizeDelta : "+((RectTransform)activeMission.Button.transform).sizeDelta);
+                // ((RectTransform)button.transform).localScale =
+                //     new Vector3(0.5f, 0.5f, 0.5f);
+                // the missions on the planets
+                // ((RectTransform)activeMission.Button.transform).sizeDelta =
+                //     new Vector2(20.0f, 20.0f);
+                Plugin.Logger.LogInfo("localScale : "+((RectTransform)button.transform).localScale);
                 buttonIndex++;
             }
         }
