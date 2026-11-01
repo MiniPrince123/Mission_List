@@ -94,6 +94,7 @@ internal static class MissionSelectWindowPatch
         );
 
         customWindow.name = "MyCustomWindow";
+        customWindow.GetComponentInChildren<TextMeshProUGUI>(true).text = "Mission List";
         customWindow.SetActive(false);
 
         // ---------------------
@@ -144,36 +145,26 @@ internal static class MissionSelectWindowPatch
         var prefabField =
             AccessTools.Field(typeof(MissionSelectWindow), "missionButtonPrefab");
         var prefab = (MissionSelectButton)prefabField.GetValue(missionWindow);
+        var planetsField =
+            AccessTools.Field(typeof(MissionSelectWindow), "planets");
+        var planets =
+            (MissionSelectWindow.PlanetData[])planetsField.GetValue(missionWindow);
 
         int buttonIndex = 0;
-        for (int regionIndex = 0;
-             regionIndex < Global.Instance.Regions.Length;
-             regionIndex++)
+        for (int planetIndex = 0; planetIndex < planets.Length; planetIndex++)
         {
-            WorldRegion region = Global.Instance.Regions[regionIndex];
-            if (region == null ||
-                region.LegacyScenes == null ||
-                region.LegacyScenes.Length == 0)
-                continue;
-
+            MissionSelectWindow.PlanetData planet = planets[planetIndex];
             for (int missionIndex = 0;
-                 missionIndex < Global.Instance.Missions.Length;
+                 missionIndex < planet.activeMissions.TriangleCount;
                  missionIndex++)
             {
-                Mission mission = Global.Instance.Missions[missionIndex];
-                if (!Mission.IsValidMission(mission, region.Flags))
+                MissionSelectWindow.ActiveMission activeMission =
+                    planet.activeMissions.GetData(missionIndex);
+                if (activeMission.Button == null ||
+                    !activeMission.Button.gameObject.activeSelf)
                     continue;
 
-                int seed = Global.MissionSelectSeed +
-                           (mission.ID.GetHashCode() + 3173) * 5390921 +
-                           regionIndex;
-                SceneData overriddenScene;
-                SceneData scene = mission.OverrideScene(
-                    out overriddenScene,
-                    region,
-                    seed)
-                    ? overriddenScene
-                    : region.LegacyScenes[0];
+                MissionData missionData = activeMission.Button.Mission;
 
                 MissionSelectButton button;
                 if (buttonIndex < container.childCount)
@@ -187,17 +178,9 @@ internal static class MissionSelectWindowPatch
                 }
 
                 button.gameObject.SetActive(true);
-                button.Setup(
-                    new MissionData(
-                        seed,
-                        mission,
-                        region,
-                        scene,
-                        null,
-                        mission.GetAdditionalData(),
-                        false),
-                    missionWindow,
-                    true);
+                button.Setup(missionData, missionWindow, true);
+                ((RectTransform)button.transform).sizeDelta =
+                    ((RectTransform)activeMission.Button.transform).sizeDelta;
                 buttonIndex++;
             }
         }
