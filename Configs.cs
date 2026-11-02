@@ -20,6 +20,6 @@ internal static class Configs
             "Preferences",
             "Is Open By Default",
             false,
-            "If true, the mission list window will be open when you interact with the terminal.");
+            "Whether or not the Mission List window will be open when you interact with the terminal.");
     }
 }
