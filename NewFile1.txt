@@ -1,0 +1,26 @@
+PlanetaryDefense                    RGBA(0.781, 1.000, 1.000, 1.000)
+ResearchRampage                     RGBA(1.000, 0.035, 1.000, 1.000)
+CleanupDetail                       RGBA(1.000, 1.000, 0.643, 1.000)
+SaxoniteTransport                   RGBA(1.000, 0.506, 1.000, 1.000)
+PrizedPossession                    RGBA(0.129, 0.779, 1.000, 1.000)
+SatelliteSalvage                    RGBA(1.000, 0.773, 1.000, 1.000)
+population control mission icon     RGBA(0.227, 0.961, 0.542, 1.000)
+
+PTO                                 RGBA(1.000, 0.910, 0.764, 1.000)
+dead scientists icon                RGBA(0.572, 0.506, 1.000, 1.000) (incursion)
+abom                                RGBA(1.000, 0.296, 0.204, 1.000) (abomination assault)
+
+m_amalgamation icon                 RGBA(1.000, 0.412, 0.310, 1.000)
+ouroboros icon                      RGBA(1.000, 0.161, 0.316, 1.000)
+OuroBlitz                           RGBA(1.000, 0.161, 0.316, 1.000)
+
+Oxythane-Logo-(White)               RGBA(0.387, 0.529, 1.000, 1.000) (oxy escalation)
+
+
+GroundZero                          RGBA(0.7133, 1.000, 0, 1.000)
+IntroMission                        RGBA(1.000, 1.000, 1.000, 1.000)
+Oxythane-Logo-(White)               RGBA(0.5189, 0.8528, 1.000, 1.000) (oxy normal)
+error modifier icon                 RGBA(0.7925, 0.0274, 0.1874, 1.000)
+couch icon                          RGBA(1.000, 0.5098, 0.7073, 1.000)
+mycologist                          RGBA(0.8627, 0.3176, 1.000, 1.000)
+

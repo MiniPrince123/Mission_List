@@ -1,0 +1,24 @@
+RectTransform.anchoredPosition = (0,0) : offset ?
+RectTransform.anchorMax = (1,1) : le ratio du topright
+RectTransform.anchorMin = (0,0) : le ratio du bottomleft
+RectTransform.offsetMax = (-1.5,-1.5) : cmb de pixels +- offset du topright
+RectTransform.offsetMin = (1.5,1.5) : cmb de pixels +- offset du bottomleft
+RectTransform.pivot = (0.5,0.5) : overall offset ?
+RectTransform.sizeDelta = (-3,-3) : nb de pixels en moins gauche et droite
+
+
+i need to change CustomScrollArea's rect transform with CustomBKG's
+
+
+
+
+
+MissionSelectButton = RectTransform.GetChild(buttonIndex).GetComponent<MissionSelectButton>();
+MissionSelectButton.Setup(MissionData, MissionSelectWindow, true);
+
+MissionSelectButton     button
+RectTransform           container
+MissionSelectWindow     missionWindow
+
+button = container.GetChild(buttonIndex).GetComponent<MissionSelectButton>();
+button.Setup(missionData, missionWindow, true);
