@@ -22,3 +22,46 @@ MissionSelectWindow     missionWindow
 
 button = container.GetChild(buttonIndex).GetComponent<MissionSelectButton>();
 button.Setup(missionData, missionWindow, true);
+
+
+
+
+
+
+
+
+// Plugin.Logger.LogInfo("region.NameID : "+activeMission.Button.Mission.Region.NameID); // moon
+// Plugin.Logger.LogInfo("region.RegionName : "+activeMission.Button.Mission.Region.RegionName); // Moonscape
+// Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
+
+region.NameID : gravityfarm
+region.RegionName : Gravity Farms
+region.GetName() : GravityFarm
+
+region.NameID : city
+region.RegionName : Titan City
+region.GetName() : City
+
+region.NameID : desert
+region.RegionName : Flourishing Desert
+region.GetName() : Desert
+
+region.NameID : icefloes
+region.RegionName : Ice Floes
+region.GetName() : IceFloes
+
+region.NameID : tundra
+region.RegionName : Moldy Tundra
+region.GetName() : Tundra
+
+region.NameID : sewer
+region.RegionName : Runoff Swamp
+region.GetName() : Sewer
+
+region.NameID : moon
+region.RegionName : Moonscape
+region.GetName() : Moon
+
+Plugin.Logger.LogInfo("Mission.MissionType : " + activeMission.Button.mission.Mission.MissionType); //SuperDonkeyKongCountry
+Plugin.Logger.LogInfo("Mission._missionName : " + activeMission.Button.mission.Mission._missionName); //sax_transport (this)
+Plugin.Logger.LogInfo("Mission.MissionName : " + activeMission.Button.mission.Mission.MissionName); //Saxonite Transport

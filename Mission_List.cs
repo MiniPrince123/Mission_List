@@ -19,6 +19,38 @@ namespace MyMycoModRoot;
 )]
 internal static class MissionList
 {
+    private static readonly string[] BiomeOrder =
+    {
+        "GravityFarm",
+        "City",
+        "Desert",
+        "IceFloes",
+        "Tundra",
+        "Sewer",
+        "Moon"
+    };
+
+    private static readonly string[] MissionTypeOrder =
+    {
+        "abomrush",
+
+        "planet_def",
+        "rampage",
+        "sat_salvage",
+        "cleanup_detail",
+        "sax_transport",
+        "prized_pos",
+        "pop_ctrl",
+
+        "ge_amalgamation",
+        "freeroam",
+
+        "incursion",
+        "ouroboros",
+        "ouroblitz",
+        "oxybreach_e",
+    };
+
     private static ScrollArea _customScrollArea;
 
     private static void Postfix(MissionSelectWindow __instance)
@@ -210,7 +242,16 @@ internal static class MissionList
                 if (activeMission.Button == null ||
                     !activeMission.Button.gameObject.activeSelf)
                     continue;
-
+                
+                if (!Configs.Freeroam.Value && activeMission.Button.mission.Mission._missionName == "freeroam") continue;
+                if (!Configs.Incursion.Value && activeMission.Button.mission.Mission._missionName == "incursion") continue;
+                if (!Configs.Ouroboros.Value && activeMission.Button.mission.Mission._missionName == "ouroboros") continue;
+                if (!Configs.Ouroblitz.Value && activeMission.Button.mission.Mission._missionName == "ouroblitz") continue;
+                if (!Configs.Oxythane.Value && activeMission.Button.mission.Mission._missionName == "oxybreach_e") continue;
+                
+                // Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
+                Plugin.Logger.LogInfo("Mission._missionName : " + activeMission.Button.mission.Mission._missionName); //sax_transport (this)
+                
                 missions.Add(activeMission.Button.Mission);
             }
         }
@@ -218,16 +259,19 @@ internal static class MissionList
         missions = Configs.SortBy.Value switch
         {
             Configs.SortMethod.Biome => missions
-                .OrderBy(mission => mission.Region.ToString())
-                .ThenBy(mission => mission.Mission.MissionType.ToString())
+                .OrderBy(GetBiomeOrder)
+                .ThenByDescending(mission => mission.GetModifierCount())
+                .ThenBy(GetMissionTypeOrder)
                 .ToList(),
             Configs.SortMethod.ModifierCount => missions
-                .OrderBy(mission => mission.GetModifierCount())
-                .ThenBy(mission => mission.Mission.MissionType.ToString())
+                .OrderByDescending(mission => mission.GetModifierCount())
+                .ThenBy(GetMissionTypeOrder)
+                .ThenBy(GetBiomeOrder)
                 .ToList(),
             Configs.SortMethod.MissionType => missions
-                .OrderBy(mission => mission.Mission.MissionType.ToString())
-                .ThenBy(mission => mission.Region.ToString())
+                .OrderBy(GetMissionTypeOrder)
+                .ThenByDescending(mission => mission.GetModifierCount())
+                .ThenBy(GetBiomeOrder)
                 .ToList(),
             _ => missions
         };
@@ -248,7 +292,6 @@ internal static class MissionList
             }
 
             button.gameObject.SetActive(true);
-            Plugin.Logger.LogInfo("GetModifierCount" + missionData.GetModifierCount());
             button.Setup(missionData, missionWindow, true);
 
             if (Configs.BiomeIconsColor.Value)
@@ -260,6 +303,34 @@ internal static class MissionList
         // Hide unused buttons left over from the cloned template.
         for (int i = buttonIndex; i < container.childCount; i++)
             container.GetChild(i).gameObject.SetActive(false);
+    }
+
+    private static int GetBiomeOrder(MissionData mission)
+    {
+        string biomeName = mission.Region.GetName();
+        for (int index = 0; index < BiomeOrder.Length; index++)
+        {
+            if (string.Equals(BiomeOrder[index], biomeName, System.StringComparison.OrdinalIgnoreCase))
+                return index;
+        }
+
+        return BiomeOrder.Length;
+    }
+
+    private static int GetMissionTypeOrder(MissionData mission)
+    {
+        string typeName = mission.Mission._missionName;
+        // Plugin.Logger.LogInfo("typeName : " + typeName);
+        for (int index = 0; index < MissionTypeOrder.Length; index++)
+        {
+            if (string.Equals(
+                    MissionTypeOrder[index],
+                    typeName,
+                    System.StringComparison.OrdinalIgnoreCase))
+                return index;
+        }
+
+        return BiomeOrder.Length;
     }
 
 
