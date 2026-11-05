@@ -24,3 +24,16 @@ error modifier icon                 RGBA(0.7925, 0.0274, 0.1874, 1.000)
 couch icon                          RGBA(1.000, 0.5098, 0.7073, 1.000)
 mycologist                          RGBA(0.8627, 0.3176, 1.000, 1.000)
 
+
+
+
+
+
+
+Gravity Farms       #FFBF41     ColorRGBA(1.000, 0.747, 0.255, 1.000)
+Flourishing Desert  #FFE789     ColorRGBA(1.000, 0.907, 0.538, 1.000)
+Moldy Tundra        #FF7686     ColorRGBA(1.000, 0.462, 0.524, 1.000)
+Titan City          #D493FF     ColorRGBA(0.831, 0.576, 1.000, 1.000)
+Ice Floes           #81C0FF     ColorRGBA(0.506, 0.751, 1.000, 1.000)
+Runoff Swamp        #CEFF93     ColorRGBA(0.809, 1.000, 0.576, 1.000)
+Moonscape           #BFC9D4     ColorRGBA(0.749, 0.788, 0.830, 1.000)
