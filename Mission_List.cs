@@ -32,7 +32,9 @@ internal static class MissionList
 
     private static readonly string[] MissionTypeOrder =
     {
+        "groundzero",
         "abomrush",
+        "ge_amalgamation",
 
         "planet_def",
         "rampage",
@@ -42,9 +44,7 @@ internal static class MissionList
         "prized_pos",
         "pop_ctrl",
 
-        "ge_amalgamation",
         "freeroam",
-
         "incursion",
         "ouroboros",
         "ouroblitz",
@@ -243,11 +243,7 @@ internal static class MissionList
                     !activeMission.Button.gameObject.activeSelf)
                     continue;
                 
-                if (!Configs.Freeroam.Value && activeMission.Button.mission.Mission._missionName == "freeroam") continue;
-                if (!Configs.Incursion.Value && activeMission.Button.mission.Mission._missionName == "incursion") continue;
-                if (!Configs.Ouroboros.Value && activeMission.Button.mission.Mission._missionName == "ouroboros") continue;
-                if (!Configs.Ouroblitz.Value && activeMission.Button.mission.Mission._missionName == "ouroblitz") continue;
-                if (!Configs.Oxythane.Value && activeMission.Button.mission.Mission._missionName == "oxybreach_e") continue;
+                if (!FilterMission(activeMission.Button.Mission.Mission)) continue;
                 
                 // Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
                 Plugin.Logger.LogInfo("Mission._missionName : " + activeMission.Button.mission.Mission._missionName); //sax_transport (this)
@@ -303,6 +299,18 @@ internal static class MissionList
         // Hide unused buttons left over from the cloned template.
         for (int i = buttonIndex; i < container.childCount; i++)
             container.GetChild(i).gameObject.SetActive(false);
+    }
+
+    private static bool FilterMission(Mission mission)
+    {
+        if (!Configs.Freeroam.Value && mission._missionName == "freeroam") return false;
+        if (!Configs.Incursion.Value && mission._missionName == "incursion") return false;
+        if (!Configs.Ouroboros.Value && mission._missionName == "ouroboros") return false;
+        if (!Configs.Ouroblitz.Value && mission._missionName == "ouroblitz") return false;
+        if (!Configs.Oxythane.Value && mission._missionName == "oxybreach_e") return false;
+        if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll && mission.HasCompletedThisWeek()) return false;
+
+        return true;
     }
 
     private static int GetBiomeOrder(MissionData mission)

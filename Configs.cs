@@ -5,6 +5,7 @@ namespace MyMycoModRoot;
 internal static class Configs
 {
     internal enum SortMethod { Biome, ModifierCount, MissionType }
+    internal enum WeekliesEnum { Vanilla, HideAll, HideNone }
 
     public static ConfigEntry<bool> Enabled { get; private set; }
     public static ConfigEntry<SortMethod> SortBy { get; private set; }
@@ -16,6 +17,7 @@ internal static class Configs
     public static ConfigEntry<bool> Incursion { get; private set; }
     public static ConfigEntry<bool> Ouroboros { get; private set; }
     public static ConfigEntry<bool> Ouroblitz { get; private set; }
+    public static ConfigEntry<WeekliesEnum> WeekliesVisibility { get; private set; }
 
     internal static void Initialize(ConfigFile configFile)
     {
@@ -39,17 +41,12 @@ internal static class Configs
         
         BiomeIconsColor = configFile.Bind<bool>(
             "Preferences",
-            "Biome-Based Icons Color",
+            "Biome-Based Outline Color",
             false,
-            "Colors mission icons based on their biome's color.");
+            "Colors mission's outlines based on their biome's color.");
         
         
         
-        Oxythane = configFile.Bind<bool>(
-            "Mission Type Visibility",
-            "Oxythane Breach",
-            true,
-            "Shows Oxythane Breach Escalation in the Mission List.");
         
         Freeroam = configFile.Bind<bool>(
             "Mission Type Visibility",
@@ -66,13 +63,25 @@ internal static class Configs
         Ouroboros = configFile.Bind<bool>(
             "Mission Type Visibility",
             "Ouroboros",
-            true,
+            false,
             "Shows Ouroboros in the Mission List.");
         
         Ouroblitz = configFile.Bind<bool>(
             "Mission Type Visibility",
             "Ouroblitz",
-            true,
+            false,
             "Shows Ouroboros Blitz in the Mission List.");
+        
+        Oxythane = configFile.Bind<bool>(
+            "Mission Type Visibility",
+            "Oxythane Breach",
+            false,
+            "Shows Oxythane Breach Escalation in the Mission List.");
+        
+        WeekliesVisibility = configFile.Bind<WeekliesEnum>(
+            "Mission Type Visibility",
+            "Completed Weeklies",
+            WeekliesEnum.Vanilla,
+            "Completed weeklies' visibility.");
     }
 }
