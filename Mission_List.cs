@@ -6,6 +6,7 @@ using BepInEx;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
+using Pigeon.Movement;
 using Pigeon.UI;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
@@ -53,6 +54,8 @@ internal static class MissionList
     };
 
     private static ScrollArea _customScrollArea;
+    private static GameObject _customButton;
+    private static GameObject _customWindow;
 
     private static void Postfix(MissionSelectWindow __instance)
     {
@@ -71,20 +74,20 @@ internal static class MissionList
         }
 
         // Clone the Replay button so the new button matches the game's styling.
-        GameObject missionListButton = Object.Instantiate(replayButton, replayButton.transform.parent);
-        missionListButton.name = "MyCustomButton";
-        missionListButton.GetComponentInChildren<TextMeshProUGUI>(true).text = "Mission List";
-        missionListButton.transform.SetSiblingIndex(replayButton.transform.GetSiblingIndex() + 2);
-        missionListButton.SetActive(true);
-        missionListButton.transform.localPosition = Vector3.zero;
-
-        var defaultButton = missionListButton.GetComponent<DefaultButton>();
-        if (defaultButton != null)
+        if (_customButton == null)
         {
-            ClearPersistentListeners(defaultButton.OnClickUp);
-            // not needed ? :
-            // defaultButton.OnClickUp.RemoveAllListeners();
-            defaultButton.OnClickUp.AddListener(() => OnCustomButtonClicked(__instance));
+            _customButton = Object.Instantiate(replayButton, replayButton.transform.parent);
+            _customButton.name = "MyCustomButton";
+            _customButton.GetComponentInChildren<TextMeshProUGUI>(true).text = "Mission List";
+            _customButton.transform.SetSiblingIndex(replayButton.transform.GetSiblingIndex() + 2);
+            _customButton.transform.localPosition = Vector3.zero;
+
+            var defaultButton = _customButton.GetComponent<DefaultButton>();
+            if (defaultButton != null)
+            {
+                ClearPersistentListeners(defaultButton.OnClickUp);
+                defaultButton.OnClickUp.AddListener(() => OnCustomButtonClicked(__instance));
+            }
         }
 
         if (_customWindow == null) CreateCustomWindow(__instance);
@@ -97,7 +100,10 @@ internal static class MissionList
         instance.legacyWindow.SetActive(false);
         instance.replayWindow.SetActive(false);
 
-        _customWindow.SetActive(!_customWindow.activeSelf);
+        if (_customWindow.activeSelf)
+            CloseCustomWindow();
+        else
+            OpenCustomWindow();
     }
 
     internal static void CloseCustomWindow()
@@ -105,8 +111,15 @@ internal static class MissionList
         if (_customWindow != null) _customWindow.SetActive(false);
     }
 
-
-    private static GameObject _customWindow;
+    private static void OpenCustomWindow()
+    {
+        if (_customWindow == null) return;
+        _customWindow.SetActive(true);
+        PlayerLook.Instance.DotTransition.Enable(
+            (RectTransform)_customWindow.transform,
+            Global.UIColor
+        );
+    }
 
     private static void CreateCustomWindow(MissionSelectWindow missionWindow)
     {
@@ -132,7 +145,9 @@ internal static class MissionList
         );
         _customWindow.name = "MyCustomWindow";
         _customWindow.GetComponentInChildren<TextMeshProUGUI>(true).text = "Mission List";
-        _customWindow.SetActive(Configs.IsOpenByDefault.Value);
+        _customWindow.SetActive(false);
+
+        WireCloseButton(_customWindow);
 
         // Locate the mission-button container inside the cloned window.
         // The hierarchy path is calculated from the original window and
@@ -165,7 +180,6 @@ internal static class MissionList
         customContainer.GetComponent<UnityEngine.UI.GridLayoutGroup>().spacing = new Vector2(75.0f, 75.0f);
 
 
-        _customScrollArea.transform.Find("ScrollContent").gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
         var scrollContent = _customScrollArea.transform.Find("ScrollContent") as RectTransform;
             
 
@@ -199,6 +213,50 @@ internal static class MissionList
 
         // LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent);
         PopulateCustomWindow(missionWindow, scrollContent);
+
+        if (Configs.IsOpenByDefault.Value)
+            OpenCustomWindow();
+    }
+
+    private static void WireCloseButton(GameObject window)
+    {
+        foreach (var defaultButton in window.GetComponentsInChildren<DefaultButton>(true))
+        {
+            if (!IsCloseButton(defaultButton.gameObject))
+                continue;
+
+            ClearPersistentListeners(defaultButton.OnClickUp);
+            defaultButton.OnClickUp.AddListener(CloseCustomWindow);
+            return;
+        }
+
+        foreach (var button in window.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+        {
+            if (!IsCloseButton(button.gameObject))
+                continue;
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(CloseCustomWindow);
+            return;
+        }
+
+        Plugin.Logger.LogWarning("Could not find the close button in the custom mission window.");
+    }
+
+    private static bool IsCloseButton(GameObject button)
+    {
+        string buttonName = button.name.ToLowerInvariant();
+        if (buttonName.Contains("close") || buttonName.Contains("exit") ||
+            buttonName == "x" || buttonName.StartsWith("x_"))
+            return true;
+
+        foreach (var label in button.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (label.text.Trim() == "X")
+                return true;
+        }
+
+        return false;
     }
 
     // Finds the equivalent child in a cloned UI hierarchy by matching its path.
@@ -387,5 +445,20 @@ internal static class MissionList
     private static void ToggleReplayWindowPostfix()
     {
         CloseCustomWindow();
+    }
+
+    [HarmonyPatch(
+        typeof(MissionSelectWindow),
+        "OnEscape"
+    )]
+    [HarmonyPrefix]
+    private static bool OnEscapePrefix(ref bool __result)
+    {
+        if (_customWindow == null || !_customWindow.activeSelf)
+            return true;
+
+        CloseCustomWindow();
+        __result = true;
+        return false;
     }
 }
