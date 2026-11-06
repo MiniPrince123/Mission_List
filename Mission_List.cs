@@ -9,6 +9,7 @@ using UnityEngine;
 using Pigeon.UI;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
+using Image = UnityEngine.UI.Image;
 using Rect = Pigeon.UI.Rect;
 
 namespace MyMycoModRoot;
@@ -140,7 +141,7 @@ internal static class MissionList
         var originalContainer = (RectTransform)originalContainerField.GetValue(missionWindow);
         var customContainer = FindClone(originalContainer, legacyWindow, _customWindow);
         customContainer.name = "CustomBKG";
-        customContainer.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+        // customContainer.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
 
 
         var originalScrollArea = missionWindow.GetComponentInChildren<ScrollArea>(true);
@@ -164,7 +165,9 @@ internal static class MissionList
         customContainer.GetComponent<UnityEngine.UI.GridLayoutGroup>().spacing = new Vector2(75.0f, 75.0f);
 
 
+        _customScrollArea.transform.Find("ScrollContent").gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
         var scrollContent = _customScrollArea.transform.Find("ScrollContent") as RectTransform;
+            
 
         if (scrollContent == null)
         {
@@ -288,7 +291,10 @@ internal static class MissionList
             }
 
             button.gameObject.SetActive(true);
+            button.GetComponent<Image>().maskable = true;
             button.Setup(missionData, missionWindow, true);
+            foreach (var image in button.GetComponentsInChildren<Image>(true))
+                image.maskable = true;
 
             if (Configs.BiomeIconsColor.Value)
                 button.transform.Find("Outline").GetComponent<UnityEngine.UI.Image>().color = missionData.Region.Color;
