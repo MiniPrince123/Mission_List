@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.Events;
@@ -103,7 +104,13 @@ internal static class MissionList
         if (_customWindow.activeSelf)
             CloseCustomWindow();
         else
+        {
+            PopulateCustomWindow(
+                instance,
+                _customScrollArea.transform.Find("ScrollContent") as RectTransform
+            );
             OpenCustomWindow();
+        }
     }
 
     internal static void CloseCustomWindow()
@@ -181,7 +188,7 @@ internal static class MissionList
 
 
         var scrollContent = _customScrollArea.transform.Find("ScrollContent") as RectTransform;
-            
+
 
         if (scrollContent == null)
         {
@@ -303,12 +310,13 @@ internal static class MissionList
                 if (activeMission.Button == null ||
                     !activeMission.Button.gameObject.activeSelf)
                     continue;
-                
+
                 if (!FilterMission(activeMission.Button.Mission.Mission)) continue;
-                
+
                 // Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
-                Plugin.Logger.LogInfo("Mission._missionName : " + activeMission.Button.mission.Mission._missionName); //sax_transport (this)
-                
+                Plugin.Logger.LogInfo("Mission._missionName : " +
+                                      activeMission.Button.mission.Mission._missionName); //sax_transport (this)
+
                 missions.Add(activeMission.Button.Mission);
             }
         }
@@ -372,7 +380,8 @@ internal static class MissionList
         if (!Configs.Ouroboros.Value && mission._missionName == "ouroboros") return false;
         if (!Configs.Ouroblitz.Value && mission._missionName == "ouroblitz") return false;
         if (!Configs.Oxythane.Value && mission._missionName == "oxybreach_e") return false;
-        if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll && mission.HasCompletedThisWeek()) return false;
+        if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
+            mission.HasCompletedThisWeek()) return false;
 
         return true;
     }
@@ -420,10 +429,10 @@ internal static class MissionList
             "Clear"
         ).Invoke(persistentCalls, null);
 
-        // AccessTools.Method(
-        //     typeof(UnityEventBase),
-        //     "DirtyPersistentCalls"
-        // ).Invoke(unityEvent, null);
+        AccessTools.Method(
+            typeof(UnityEventBase),
+            "DirtyPersistentCalls"
+        ).Invoke(unityEvent, null);
     }
 
 
@@ -431,10 +440,14 @@ internal static class MissionList
         typeof(MissionSelectWindow),
         "ToggleLegacyWindow"
     )]
-    [HarmonyPostfix]
-    private static void ToggleLegacyWindowPostfix()
+    [HarmonyPrefix]
+    private static bool ToggleLegacyWindowPrefix()
     {
+        if (_customWindow == null || !_customWindow.activeSelf)
+            return true;
+
         CloseCustomWindow();
+        return false;
     }
 
     [HarmonyPatch(
@@ -451,14 +464,63 @@ internal static class MissionList
         typeof(MissionSelectWindow),
         "OnEscape"
     )]
-    [HarmonyPrefix]
-    private static bool OnEscapePrefix(ref bool __result)
+    [HarmonyTranspiler]
+    private static IEnumerable<CodeInstruction> OnEscapeTranspiler(
+        IEnumerable<CodeInstruction> instructions,
+        ILGenerator generator)
+    {
+        var codes = instructions.ToList();
+        var replayWindowField = AccessTools.Field(
+            typeof(MissionSelectWindow),
+            "replayWindow"
+        );
+        if (replayWindowField == null)
+        {
+            Plugin.Logger.LogError("Could not find MissionSelectWindow.replayWindow for OnEscape transpiler.");
+            return codes;
+        }
+
+        for (int index = 1; index < codes.Count; index++)
+        {
+            if (codes[index].opcode != OpCodes.Ldfld ||
+                !Equals(codes[index].operand, replayWindowField) ||
+                codes[index - 1].opcode != OpCodes.Ldarg_0)
+                continue;
+
+            var continueLabel = generator.DefineLabel();
+            var replayWindowLoad = codes[index - 1];
+            var originalLabels = replayWindowLoad.labels.ToArray();
+            replayWindowLoad.labels.Clear();
+
+            var injected = new List<CodeInstruction>
+            {
+                new CodeInstruction(
+                    OpCodes.Call,
+                    AccessTools.Method(
+                        typeof(MissionList),
+                        nameof(CloseCustomWindowAndHandleEscape)
+                    )
+                ),
+                new CodeInstruction(OpCodes.Brfalse, continueLabel),
+                new CodeInstruction(OpCodes.Ldc_I4_1),
+                new CodeInstruction(OpCodes.Ret)
+            };
+            injected[0].labels.AddRange(originalLabels);
+            replayWindowLoad.labels.Add(continueLabel);
+            codes.InsertRange(index - 1, injected);
+            return codes;
+        }
+
+        Plugin.Logger.LogError("Could not find the replayWindow check in MissionSelectWindow.OnEscape.");
+        return codes;
+    }
+
+    private static bool CloseCustomWindowAndHandleEscape()
     {
         if (_customWindow == null || !_customWindow.activeSelf)
-            return true;
+            return false;
 
         CloseCustomWindow();
-        __result = true;
-        return false;
+        return true;
     }
 }
