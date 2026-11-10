@@ -57,6 +57,22 @@ internal static class MissionList
     private static ScrollArea _customScrollArea;
     private static GameObject _customButton;
     private static GameObject _customWindow;
+    private static readonly HashSet<MissionSelectButton> OvertimeAssignmentButtons = new();
+
+    internal static void ClearOvertimeAssignmentButtons()
+    {
+        OvertimeAssignmentButtons.Clear();
+    }
+
+    internal static void TrackOvertimeAssignmentButton(
+        MissionContainer missionContainer,
+        MissionSelectButton button)
+    {
+        if (missionContainer == Global.Instance.OvertimeAssignment)
+            OvertimeAssignmentButtons.Add(button);
+        else
+            OvertimeAssignmentButtons.Remove(button);
+    }
 
     private static void Postfix(MissionSelectWindow __instance)
     {
@@ -89,43 +105,10 @@ internal static class MissionList
                 ClearPersistentListeners(defaultButton.OnClickUp);
                 defaultButton.OnClickUp.AddListener(() => OnCustomButtonClicked(__instance));
             }
+
+
+            CreateCustomWindow(__instance);
         }
-
-        if (_customWindow == null) CreateCustomWindow(__instance);
-    }
-
-    // Toggles the cloned mission-list window when its button is pressed.
-    private static void OnCustomButtonClicked(MissionSelectWindow instance)
-    {
-        if (_customWindow == null) return;
-        instance.legacyWindow.SetActive(false);
-        instance.replayWindow.SetActive(false);
-
-        if (_customWindow.activeSelf)
-            CloseCustomWindow();
-        else
-        {
-            PopulateCustomWindow(
-                instance,
-                _customScrollArea.transform.Find("ScrollContent") as RectTransform
-            );
-            OpenCustomWindow();
-        }
-    }
-
-    internal static void CloseCustomWindow()
-    {
-        if (_customWindow != null) _customWindow.SetActive(false);
-    }
-
-    private static void OpenCustomWindow()
-    {
-        if (_customWindow == null) return;
-        _customWindow.SetActive(true);
-        PlayerLook.Instance.DotTransition.Enable(
-            (RectTransform)_customWindow.transform,
-            Global.UIColor
-        );
     }
 
     private static void CreateCustomWindow(MissionSelectWindow missionWindow)
@@ -225,45 +208,71 @@ internal static class MissionList
             OpenCustomWindow();
     }
 
-    private static void WireCloseButton(GameObject window)
+
+    // Toggles the cloned mission-list window when its button is pressed.
+    private static void OnCustomButtonClicked(MissionSelectWindow instance)
     {
-        foreach (var defaultButton in window.GetComponentsInChildren<DefaultButton>(true))
+        if (_customWindow == null) return;
+        instance.legacyWindow.SetActive(false);
+        instance.replayWindow.SetActive(false);
+
+        if (_customWindow.activeSelf)
+            CloseCustomWindow();
+        else
         {
-            if (!IsCloseButton(defaultButton.gameObject))
-                continue;
-
-            ClearPersistentListeners(defaultButton.OnClickUp);
-            defaultButton.OnClickUp.AddListener(CloseCustomWindow);
-            return;
+            PopulateCustomWindow(
+                instance,
+                _customScrollArea.transform.Find("ScrollContent") as RectTransform
+            );
+            OpenCustomWindow();
         }
-
-        foreach (var button in window.GetComponentsInChildren<UnityEngine.UI.Button>(true))
-        {
-            if (!IsCloseButton(button.gameObject))
-                continue;
-
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(CloseCustomWindow);
-            return;
-        }
-
-        Plugin.Logger.LogWarning("Could not find the close button in the custom mission window.");
     }
 
-    private static bool IsCloseButton(GameObject button)
+    internal static void CloseCustomWindow()
     {
-        string buttonName = button.name.ToLowerInvariant();
-        if (buttonName.Contains("close") || buttonName.Contains("exit") ||
-            buttonName == "x" || buttonName.StartsWith("x_"))
-            return true;
+        if (_customWindow != null) _customWindow.SetActive(false);
+    }
 
-        foreach (var label in button.GetComponentsInChildren<TextMeshProUGUI>(true))
-        {
-            if (label.text.Trim() == "X")
-                return true;
-        }
+    private static void OpenCustomWindow()
+    {
+        if (_customWindow == null) return;
+        _customWindow.SetActive(true);
+        PlayerLook.Instance.DotTransition.Enable(
+            (RectTransform)_customWindow.transform,
+            Global.UIColor
+        );
+    }
 
-        return false;
+
+    private static void WireCloseButton(GameObject window)
+    {
+        var defaultCloseButton = window.GetComponentInChildren<DefaultButton>();
+        ClearPersistentListeners(defaultCloseButton.OnClickUp);
+        defaultCloseButton.OnClickUp.AddListener(CloseCustomWindow);
+
+        // foreach (var defaultButton in window.GetComponentsInChildren<DefaultButton>(true))
+        // {
+        //     Plugin.Logger.LogInfo("foreach1 : "+defaultButton);
+        //     if (!IsCloseButton(defaultButton.gameObject))
+        //         continue;
+        //
+        //     ClearPersistentListeners(defaultButton.OnClickUp);
+        //     defaultButton.OnClickUp.AddListener(CloseCustomWindow);
+        //     return;
+        // }
+
+        // foreach (var button in window.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+        // {
+        //     Plugin.Logger.LogInfo("foreach2 : "+button);
+        //     if (!IsCloseButton(button.gameObject))
+        //         continue;
+        //
+        //     button.onClick.RemoveAllListeners();
+        //     button.onClick.AddListener(CloseCustomWindow);
+        //     return;
+        // }
+        //
+        // Plugin.Logger.LogWarning("Could not find the close button in the custom mission window.");
     }
 
     // Finds the equivalent child in a cloned UI hierarchy by matching its path.
@@ -300,25 +309,57 @@ internal static class MissionList
         var prefab = (MissionSelectButton)prefabField.GetValue(missionWindow);
 
         var missions = new List<MissionData>();
-        foreach (MissionSelectWindow.PlanetData planet in missionWindow.planets)
+        // todo add replay and legacy missions
+        foreach (var planet in missionWindow.planets)
         {
-            for (int missionIndex = 0;
-                 missionIndex < planet.activeMissions.TriangleCount;
-                 missionIndex++)
+            foreach (var activeMission in planet.activeMissions.Data)
             {
-                MissionSelectWindow.ActiveMission activeMission = planet.activeMissions.GetData(missionIndex);
                 if (activeMission.Button == null ||
                     !activeMission.Button.gameObject.activeSelf)
                     continue;
 
-                if (!FilterMission(activeMission.Button.Mission.Mission)) continue;
-
-                // Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
+                var missionData = activeMission.Button.Mission;
+                // Plugin.Logger.LogInfo("region.GetName() : " + missionData.Region.GetName()); // Moon (this)
                 Plugin.Logger.LogInfo("Mission._missionName : " +
                                       activeMission.Button.mission.Mission._missionName); //sax_transport (this)
+                Plugin.Logger.LogInfo("Mission.completedweekly : " +
+                                      activeMission.Button.mission.Mission.HasCompletedThisWeek()); //sax_transport (this)
+                Plugin.Logger.LogInfo(
+                    activeMission.Button.mission.Mission ==
+                    Mission.GetMissionData(Global.Instance.OvertimeAssignment).Mission); //sax_transport (this)
 
-                missions.Add(activeMission.Button.Mission);
+                Plugin.Logger.LogInfo(
+                    $"mission data container: {missionData.Container?.GetType().Name ?? "null"}; " +
+                    $"mission source: {activeMission.Source?.GetType().Name ?? "null"}; " +
+                    $"is overtime assignment: " +
+                    $"{activeMission.Source is MissionSelectButton sourceButton && OvertimeAssignmentButtons.Contains(sourceButton)}");
+
+                var data = activeMission.Button.Mission;
+                var overtimeData = Mission.GetMissionData(Global.Instance.OvertimeAssignment);
+                Plugin.Logger.LogInfo(
+                    $"same data: {ReferenceEquals(data, overtimeData)}, " +
+                    $"same mission: {ReferenceEquals(data.Mission, overtimeData.Mission)}");
+
+                if (!FilterMission(missionData, activeMission.Source)) continue;
+
+                missions.Add(missionData);
             }
+            // for (int missionIndex = 0;
+            //      missionIndex < planet.activeMissions.TriangleCount;
+            //      missionIndex++)
+            // {
+            //     MissionSelectWindow.ActiveMission activeMission = planet.activeMissions.GetData(missionIndex);
+            //     if (activeMission.Button == null ||
+            //         !activeMission.Button.gameObject.activeSelf)
+            //         continue;
+            //
+            //     if (!FilterMission(activeMission.Button.Mission, activeMission.Source)) continue;
+            //
+            //     // Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
+            //     Plugin.Logger.LogInfo("Mission._missionName : " + activeMission.Button.mission.Mission._missionName); //sax_transport (this)
+            //
+            //     missions.Add(activeMission.Button.Mission);
+            // }
         }
 
         missions = Configs.SortBy.Value switch
@@ -363,7 +404,7 @@ internal static class MissionList
                 image.maskable = true;
 
             if (Configs.BiomeIconsColor.Value)
-                button.transform.Find("Outline").GetComponent<UnityEngine.UI.Image>().color = missionData.Region.Color;
+                button.transform.Find("Outline").GetComponent<Image>().color = missionData.Region.Color;
 
             buttonIndex++;
         }
@@ -373,50 +414,64 @@ internal static class MissionList
             container.GetChild(i).gameObject.SetActive(false);
     }
 
-    private static bool FilterMission(Mission mission)
+    private static bool FilterMission(
+        MissionData missionData,
+        object source)
     {
+        var mission = missionData.Mission;
+
         if (!Configs.Freeroam.Value && mission._missionName == "freeroam") return false;
         if (!Configs.Incursion.Value && mission._missionName == "incursion") return false;
         if (!Configs.Ouroboros.Value && mission._missionName == "ouroboros") return false;
         if (!Configs.Ouroblitz.Value && mission._missionName == "ouroblitz") return false;
         if (!Configs.Oxythane.Value && mission._missionName == "oxybreach_e") return false;
+        // if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
+        //     mission.HasCompletedThisWeek()) return false;
+        // if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
+        //     mission.ResetWeekly &&
+        //     mission.HasCompletedThisWeek())
+        //     return false;
         if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
-            mission.HasCompletedThisWeek()) return false;
+            source is MissionSelectButton sourceButton &&
+            OvertimeAssignmentButtons.Contains(sourceButton))
+            return false;
+
+        // foreach(var mission2 in Global.Instance.OvertimeAssignment[])
 
         return true;
     }
 
     private static int GetBiomeOrder(MissionData mission)
     {
-        string biomeName = mission.Region.GetName();
         for (int index = 0; index < BiomeOrder.Length; index++)
         {
-            if (string.Equals(BiomeOrder[index], biomeName, System.StringComparison.OrdinalIgnoreCase))
-                return index;
+            if (string.Equals(
+                    BiomeOrder[index],
+                    mission.Region.GetName(),
+                    System.StringComparison.OrdinalIgnoreCase)
+               ) return index;
         }
-
         return BiomeOrder.Length;
     }
 
     private static int GetMissionTypeOrder(MissionData mission)
     {
-        string typeName = mission.Mission._missionName;
         // Plugin.Logger.LogInfo("typeName : " + typeName);
         for (int index = 0; index < MissionTypeOrder.Length; index++)
         {
             if (string.Equals(
                     MissionTypeOrder[index],
-                    typeName,
-                    System.StringComparison.OrdinalIgnoreCase))
-                return index;
+                    mission.Mission._missionName,
+                    System.StringComparison.OrdinalIgnoreCase)
+                ) return index;
         }
-
-        return BiomeOrder.Length;
+        return MissionTypeOrder.Length;
     }
 
 
     // UnityEvents copied from the original button can retain serialized
     // callbacks. Clear those callbacks before attaching the custom handler.
+    // no clue
     private static void ClearPersistentListeners(UnityEventBase unityEvent)
     {
         var persistentCalls = AccessTools.Field(
@@ -436,35 +491,23 @@ internal static class MissionList
     }
 
 
-    [HarmonyPatch(
-        typeof(MissionSelectWindow),
-        "ToggleLegacyWindow"
-    )]
+    [HarmonyPatch(typeof(MissionSelectWindow), "ToggleLegacyWindow")]
     [HarmonyPrefix]
-    private static bool ToggleLegacyWindowPrefix()
+    private static void ToggleLegacyWindowPrefix()
     {
-        if (_customWindow == null || !_customWindow.activeSelf)
-            return true;
-
         CloseCustomWindow();
-        return false;
     }
 
-    [HarmonyPatch(
-        typeof(MissionSelectWindow),
-        "ToggleReplayWindow"
-    )]
+    [HarmonyPatch(typeof(MissionSelectWindow), "ToggleReplayWindow")]
     [HarmonyPostfix]
     private static void ToggleReplayWindowPostfix()
     {
         CloseCustomWindow();
     }
 
-    [HarmonyPatch(
-        typeof(MissionSelectWindow),
-        "OnEscape"
-    )]
+    [HarmonyPatch(typeof(MissionSelectWindow), "OnEscape")]
     [HarmonyTranspiler]
+    // no fuckin clue
     private static IEnumerable<CodeInstruction> OnEscapeTranspiler(
         IEnumerable<CodeInstruction> instructions,
         ILGenerator generator)
@@ -498,7 +541,7 @@ internal static class MissionList
                     OpCodes.Call,
                     AccessTools.Method(
                         typeof(MissionList),
-                        nameof(CloseCustomWindowAndHandleEscape)
+                        nameof(HandleEscapeKey)
                     )
                 ),
                 new CodeInstruction(OpCodes.Brfalse, continueLabel),
@@ -515,12 +558,32 @@ internal static class MissionList
         return codes;
     }
 
-    private static bool CloseCustomWindowAndHandleEscape()
+    private static bool HandleEscapeKey()
     {
         if (_customWindow == null || !_customWindow.activeSelf)
             return false;
 
         CloseCustomWindow();
         return true;
+    }
+}
+
+[HarmonyPatch]
+internal static class OvertimeAssignmentTrackingPatches
+{
+    [HarmonyPatch(typeof(MissionSelectWindow), "OnOpen")]
+    [HarmonyPrefix]
+    private static void OnOpenPrefix()
+    {
+        MissionList.ClearOvertimeAssignmentButtons();
+    }
+
+    [HarmonyPatch(typeof(MissionSelectWindow), "SetupMission")]
+    [HarmonyPostfix]
+    private static void SetupMissionPostfix(
+        MissionContainer __0,
+        MissionSelectButton __2)
+    {
+        MissionList.TrackOvertimeAssignmentButton(__0, __2);
     }
 }
