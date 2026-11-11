@@ -59,11 +59,6 @@ internal static class MissionList
     private static GameObject _customWindow;
     private static readonly HashSet<MissionSelectButton> OvertimeAssignmentButtons = new();
 
-    internal static void ClearOvertimeAssignmentButtons()
-    {
-        OvertimeAssignmentButtons.Clear();
-    }
-
     internal static void TrackOvertimeAssignmentButton(
         MissionContainer missionContainer,
         MissionSelectButton button)
@@ -150,11 +145,61 @@ internal static class MissionList
 
 
         var originalScrollArea = missionWindow.GetComponentInChildren<ScrollArea>(true);
-        if (originalScrollArea == null) Plugin.Logger.LogError("No originalScrollArea.");
+        if (originalScrollArea == null)
+        {
+            Plugin.Logger.LogError("No originalScrollArea.");
+            return;
+        }
 
+        var originalScrollBar = originalScrollArea.ScrollBar;
+        Plugin.Logger.LogInfo(
+            $"Original ScrollArea '{originalScrollArea.name}': ScrollBar is null = " +
+            $"{originalScrollBar == null}; value = {originalScrollBar}; " +
+            $"type = {originalScrollBar?.GetType().FullName ?? "null"}");
 
         _customScrollArea = Object.Instantiate(originalScrollArea, _customWindow.transform);
         _customScrollArea.SetName("_customScrollArea");
+
+        var originalScrollR = originalScrollArea.transform.parent.Find("Scroll R");
+        if (originalScrollR == null)
+        {
+            Plugin.Logger.LogError(
+                $"Could not find 'Scroll R' beside " +
+                $"'{GetPath(originalScrollArea.transform, missionWindow.transform)}' " +
+                "in the original mission info window.");
+        }
+        else
+        {
+            var customScrollR = Object.Instantiate(
+                originalScrollR.gameObject,
+                _customWindow.transform,
+                false);
+            customScrollR.name = "Scroll R";
+            var customScrollBar = customScrollR
+                .transform.Find("ScrollRect/ScrollBar")
+                ?.GetComponent<ScrollBar>();
+            if (customScrollBar == null)
+            {
+                Plugin.Logger.LogError(
+                    "Cloned 'Scroll R' but could not find its " +
+                    "'ScrollRect/ScrollBar' component.");
+            }
+            else
+            {
+                var scrollBarField = AccessTools.Field(typeof(ScrollArea), "scrollBar");
+                if (scrollBarField == null)
+                {
+                    Plugin.Logger.LogError("Could not find ScrollArea.scrollBar.");
+                    return;
+                }
+
+                scrollBarField.SetValue(_customScrollArea, customScrollBar);
+                Plugin.Logger.LogInfo(
+                    $"Cloned 'Scroll R/ScrollRect/ScrollBar' under " +
+                    $"'{_customWindow.name}' and assigned it to the ScrollArea.");
+            }
+        }
+
         var newRectTransform = customContainer.GetComponent<RectTransform>();
         _customScrollArea.GetComponent<RectTransform>().anchoredPosition = newRectTransform.anchoredPosition;
         _customScrollArea.GetComponent<RectTransform>().anchorMax = newRectTransform.anchorMax;
@@ -163,8 +208,6 @@ internal static class MissionList
         _customScrollArea.GetComponent<RectTransform>().offsetMin = newRectTransform.offsetMin;
         _customScrollArea.GetComponent<RectTransform>().pivot = newRectTransform.pivot * 2;
         _customScrollArea.GetComponent<RectTransform>().sizeDelta = newRectTransform.sizeDelta;
-
-
         // changes the "margin" of the mission buttons in the window
         // 76.0f is too much. couldn't care enough to test decimals
         customContainer.GetComponent<UnityEngine.UI.GridLayoutGroup>().spacing = new Vector2(75.0f, 75.0f);
@@ -178,6 +221,8 @@ internal static class MissionList
             Plugin.Logger.LogError("Could not find ScrollContent.");
             return;
         }
+
+        _customScrollArea.ItemContainer = scrollContent;
 
         var sourceLayout = customContainer.GetComponent<GridLayoutGroup>();
         var targetLayout = scrollContent.GetComponent<GridLayoutGroup>();
@@ -197,9 +242,6 @@ internal static class MissionList
         targetLayout.childAlignment = sourceLayout.childAlignment;
         targetLayout.constraint = sourceLayout.constraint;
         targetLayout.constraintCount = sourceLayout.constraintCount;
-
-        // _customScrollArea.ItemContainer = scrollContent;
-
 
         // LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent);
         PopulateCustomWindow(missionWindow, scrollContent);
@@ -344,22 +386,6 @@ internal static class MissionList
 
                 missions.Add(missionData);
             }
-            // for (int missionIndex = 0;
-            //      missionIndex < planet.activeMissions.TriangleCount;
-            //      missionIndex++)
-            // {
-            //     MissionSelectWindow.ActiveMission activeMission = planet.activeMissions.GetData(missionIndex);
-            //     if (activeMission.Button == null ||
-            //         !activeMission.Button.gameObject.activeSelf)
-            //         continue;
-            //
-            //     if (!FilterMission(activeMission.Button.Mission, activeMission.Source)) continue;
-            //
-            //     // Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
-            //     Plugin.Logger.LogInfo("Mission._missionName : " + activeMission.Button.mission.Mission._missionName); //sax_transport (this)
-            //
-            //     missions.Add(activeMission.Button.Mission);
-            // }
         }
 
         missions = Configs.SortBy.Value switch
@@ -436,7 +462,6 @@ internal static class MissionList
             OvertimeAssignmentButtons.Contains(sourceButton))
             return false;
 
-        // foreach(var mission2 in Global.Instance.OvertimeAssignment[])
 
         return true;
     }
@@ -566,16 +591,21 @@ internal static class MissionList
         CloseCustomWindow();
         return true;
     }
+    
+    internal static void ClearOTButtons()
+    {
+        OvertimeAssignmentButtons.Clear();
+    }
 }
 
 [HarmonyPatch]
-internal static class OvertimeAssignmentTrackingPatches
+internal static class OTTrackingPatches
 {
     [HarmonyPatch(typeof(MissionSelectWindow), "OnOpen")]
     [HarmonyPrefix]
     private static void OnOpenPrefix()
     {
-        MissionList.ClearOvertimeAssignmentButtons();
+        MissionList.ClearOTButtons();
     }
 
     [HarmonyPatch(typeof(MissionSelectWindow), "SetupMission")]
