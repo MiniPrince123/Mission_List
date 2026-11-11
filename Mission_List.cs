@@ -57,17 +57,8 @@ internal static class MissionList
     private static ScrollArea _customScrollArea;
     private static GameObject _customButton;
     private static GameObject _customWindow;
-    private static readonly HashSet<MissionSelectButton> OvertimeAssignmentButtons = new();
-
-    internal static void TrackOvertimeAssignmentButton(
-        MissionContainer missionContainer,
-        MissionSelectButton button)
-    {
-        if (missionContainer == Global.Instance.OvertimeAssignment)
-            OvertimeAssignmentButtons.Add(button);
-        else
-            OvertimeAssignmentButtons.Remove(button);
-    }
+    private static readonly HashSet<MissionSelectButton> OtButtons = new();
+    
 
     private static void Postfix(MissionSelectWindow __instance)
     {
@@ -144,14 +135,15 @@ internal static class MissionList
         // customContainer.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
 
 
-        var originalScrollArea = missionWindow.GetComponentInChildren<ScrollArea>(true);
+        ScrollArea originalScrollArea = missionWindow.GetComponentInChildren<ScrollArea>(true);
         if (originalScrollArea == null)
         {
             Plugin.Logger.LogError("No originalScrollArea.");
             return;
         }
 
-        var originalScrollBar = originalScrollArea.ScrollBar;
+        ScrollBar originalScrollBar = originalScrollArea.ScrollBar;
+        Plugin.Logger.LogInfo("SCROLLAREA PARENT : " + originalScrollArea.transform.parent.GetName());
         Plugin.Logger.LogInfo(
             $"Original ScrollArea '{originalScrollArea.name}': ScrollBar is null = " +
             $"{originalScrollBar == null}; value = {originalScrollBar}; " +
@@ -159,6 +151,8 @@ internal static class MissionList
 
         _customScrollArea = Object.Instantiate(originalScrollArea, _customWindow.transform);
         _customScrollArea.SetName("_customScrollArea");
+        _customScrollArea.Scroll(new Vector2(0, -1000));
+        
 
         var originalScrollR = originalScrollArea.transform.parent.Find("Scroll R");
         if (originalScrollR == null)
@@ -374,13 +368,13 @@ internal static class MissionList
                     $"mission data container: {missionData.Container?.GetType().Name ?? "null"}; " +
                     $"mission source: {activeMission.Source?.GetType().Name ?? "null"}; " +
                     $"is overtime assignment: " +
-                    $"{activeMission.Source is MissionSelectButton sourceButton && OvertimeAssignmentButtons.Contains(sourceButton)}");
+                    $"{activeMission.Source is MissionSelectButton sourceButton && OtButtons.Contains(sourceButton)}");
 
                 var data = activeMission.Button.Mission;
-                var overtimeData = Mission.GetMissionData(Global.Instance.OvertimeAssignment);
+                var otData = Mission.GetMissionData(Global.Instance.OvertimeAssignment);
                 Plugin.Logger.LogInfo(
-                    $"same data: {ReferenceEquals(data, overtimeData)}, " +
-                    $"same mission: {ReferenceEquals(data.Mission, overtimeData.Mission)}");
+                    $"same data: {ReferenceEquals(data, otData)}, " +
+                    $"same mission: {ReferenceEquals(data.Mission, otData.Mission)}");
 
                 if (!FilterMission(missionData, activeMission.Source)) continue;
 
@@ -459,7 +453,7 @@ internal static class MissionList
         //     return false;
         if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
             source is MissionSelectButton sourceButton &&
-            OvertimeAssignmentButtons.Contains(sourceButton))
+            OtButtons.Contains(sourceButton))
             return false;
 
 
@@ -594,12 +588,23 @@ internal static class MissionList
     
     internal static void ClearOTButtons()
     {
-        OvertimeAssignmentButtons.Clear();
+        OtButtons.Clear();
+    }
+    
+    
+    internal static void TrackOtButton(
+        MissionContainer missionContainer,
+        MissionSelectButton button)
+    {
+        if (missionContainer == Global.Instance.OvertimeAssignment)
+            OtButtons.Add(button);
+        else
+            OtButtons.Remove(button);
     }
 }
 
 [HarmonyPatch]
-internal static class OTTrackingPatches
+internal static class OtTrackingPatches
 {
     [HarmonyPatch(typeof(MissionSelectWindow), "OnOpen")]
     [HarmonyPrefix]
@@ -614,6 +619,6 @@ internal static class OTTrackingPatches
         MissionContainer __0,
         MissionSelectButton __2)
     {
-        MissionList.TrackOvertimeAssignmentButton(__0, __2);
+        MissionList.TrackOtButton(__0, __2);
     }
 }
