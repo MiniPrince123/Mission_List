@@ -18,15 +18,11 @@ internal static class Configs
     public static ConfigEntry<bool> Ouroboros { get; private set; }
     public static ConfigEntry<bool> Ouroblitz { get; private set; }
     public static ConfigEntry<WeekliesEnum> WeekliesVisibility { get; private set; }
+    public static ConfigEntry<bool> LegacyMissions { get; private set; }
+    public static ConfigEntry<bool> ReplayMissions { get; private set; }
 
     internal static void Initialize(ConfigFile configFile)
     {
-        Enabled = configFile.Bind<bool>(
-            "Features",
-            "Enabled",
-            true,
-            "Enables or disables the mod.");
-
         SortBy = configFile.Bind<SortMethod>(
             "Preferences",
             "Sorting Method",
@@ -49,39 +45,51 @@ internal static class Configs
         
         
         Freeroam = configFile.Bind<bool>(
-            "Mission Type Visibility",
+            "Missions Visibility",
             "PTO",
             true,
             "Shows PTO in the Mission List.");
         
         Incursion = configFile.Bind<bool>(
-            "Mission Type Visibility",
+            "Missions Visibility",
             "Incursion",
             true,
             "Shows Incursion in the Mission List.");
         
         Ouroboros = configFile.Bind<bool>(
-            "Mission Type Visibility",
+            "Missions Visibility",
             "Ouroboros",
             false,
             "Shows Ouroboros in the Mission List.");
         
         Ouroblitz = configFile.Bind<bool>(
-            "Mission Type Visibility",
+            "Missions Visibility",
             "Ouroblitz",
             false,
             "Shows Ouroboros Blitz in the Mission List.");
         
         Oxythane = configFile.Bind<bool>(
-            "Mission Type Visibility",
+            "Missions Visibility",
             "Oxythane Breach",
             false,
             "Shows Oxythane Breach Escalation in the Mission List.");
         
         WeekliesVisibility = configFile.Bind<WeekliesEnum>(
-            "Mission Type Visibility",
+            "Missions Visibility",
             "Completed Weeklies",
             WeekliesEnum.Vanilla,
             "Completed weeklies' visibility.");
+        
+        LegacyMissions = configFile.Bind<bool>(
+            "Missions Visibility",
+            "Include Extra Permanent Locations",
+            false,
+            "Adds the \"Permanent Locations\" tab's missions to the Mission List.");
+        
+        ReplayMissions = configFile.Bind<bool>(
+            "Missions Visibility",
+            "Include Replay Missions",
+            false,
+            "Adds the missions from the \"Replay Mission\" tab's to the Mission List.");
     }
 }
