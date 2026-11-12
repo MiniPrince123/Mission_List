@@ -57,6 +57,7 @@ internal static class MissionList
     private static ScrollArea _customScrollArea;
     private static GameObject _customButton;
     private static GameObject _customWindow;
+    private static GameObject _customScrollR;
     private static readonly HashSet<MissionSelectButton> OtButtons = new();
     
 
@@ -151,8 +152,11 @@ internal static class MissionList
 
         _customScrollArea = Object.Instantiate(originalScrollArea, _customWindow.transform);
         _customScrollArea.SetName("_customScrollArea");
-        _customScrollArea.Scroll(new Vector2(0, -1000));
-        
+        // The clone keeps a serialized onScroll call into the ORIGINAL
+        // MissionInfoWindow.OnModifierScroll. While it exists, ScrollArea.Scroll()
+        // invokes it and returns without ever touching our scroll bar, so the
+        // mouse wheel does nothing in this window.
+        ClearPersistentListeners(_customScrollArea.onScroll);
 
         var originalScrollR = originalScrollArea.transform.parent.Find("Scroll R");
         if (originalScrollR == null)
@@ -161,38 +165,37 @@ internal static class MissionList
                 $"Could not find 'Scroll R' beside " +
                 $"'{GetPath(originalScrollArea.transform, missionWindow.transform)}' " +
                 "in the original mission info window.");
+            DestroyCustomWindow();
+            return;
         }
-        else
-        {
-            var customScrollR = Object.Instantiate(
-                originalScrollR.gameObject,
-                _customWindow.transform,
-                false);
-            customScrollR.name = "Scroll R";
-            var customScrollBar = customScrollR
-                .transform.Find("ScrollRect/ScrollBar")
-                ?.GetComponent<ScrollBar>();
-            if (customScrollBar == null)
-            {
-                Plugin.Logger.LogError(
-                    "Cloned 'Scroll R' but could not find its " +
-                    "'ScrollRect/ScrollBar' component.");
-            }
-            else
-            {
-                var scrollBarField = AccessTools.Field(typeof(ScrollArea), "scrollBar");
-                if (scrollBarField == null)
-                {
-                    Plugin.Logger.LogError("Could not find ScrollArea.scrollBar.");
-                    return;
-                }
 
-                scrollBarField.SetValue(_customScrollArea, customScrollBar);
-                Plugin.Logger.LogInfo(
-                    $"Cloned 'Scroll R/ScrollRect/ScrollBar' under " +
-                    $"'{_customWindow.name}' and assigned it to the ScrollArea.");
-            }
+        _customScrollR = Object.Instantiate(
+            originalScrollR.gameObject,
+            _customWindow.transform,
+            false);
+        _customScrollR.name = "Scroll R";
+        // The game hides 'Scroll R' when the info list fits; the clone copies that.
+        _customScrollR.SetActive(true);
+        var customScrollBar = _customScrollR
+            .transform.Find("ScrollRect/ScrollBar")
+            ?.GetComponent<ScrollBar>();
+        var scrollBarField = AccessTools.Field(typeof(ScrollArea), "scrollBar");
+        if (customScrollBar == null || scrollBarField == null)
+        {
+            // Do not continue: the ScrollArea would drive the original window's bar.
+            Plugin.Logger.LogError(
+                "Could not wire the cloned 'Scroll R/ScrollRect/ScrollBar' " +
+                "to the custom ScrollArea.");
+            DestroyCustomWindow();
+            return;
         }
+
+        // Same problem as onScroll: dragging would move the original reward list.
+        ClearPersistentListeners(customScrollBar.OnDrag);
+        scrollBarField.SetValue(_customScrollArea, customScrollBar);
+        Plugin.Logger.LogInfo(
+            $"Cloned 'Scroll R/ScrollRect/ScrollBar' under " +
+            $"'{_customWindow.name}' and assigned it to the ScrollArea.");
 
         var newRectTransform = customContainer.GetComponent<RectTransform>();
         _customScrollArea.GetComponent<RectTransform>().anchoredPosition = newRectTransform.anchoredPosition;
@@ -273,12 +276,46 @@ internal static class MissionList
     {
         if (_customWindow == null) return;
         _customWindow.SetActive(true);
+        RefreshCustomScroll();
         PlayerLook.Instance.DotTransition.Enable(
             (RectTransform)_customWindow.transform,
             Global.UIColor
         );
     }
 
+
+    // Must run AFTER the window is active: the layout rebuild is a no-op on an
+    // inactive hierarchy, and ScrollArea.Awake (which hooks the bar to the
+    // content) only runs on first activation.
+    private static void RefreshCustomScroll()
+    {
+        if (_customScrollArea == null) return;
+        var content = _customScrollArea.ItemContainer;
+        var bar = _customScrollArea.ScrollBar;
+        if (content == null || bar == null) return;
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+        // Wheel step per notch; the cloned bar's serialized speed is meant for
+        // the info window and would jump from one end to the other.
+        _customScrollArea.UpdateScrollSpeed();
+        float maxScroll = _customScrollArea.GetMaxScrollPos(null);
+        if (_customScrollR != null) _customScrollR.SetActive(maxScroll > 0f);
+        bar.SetScrollY(1f); // 1 = top of the list
+
+        Plugin.Logger.LogInfo(
+            $"scroll: persistent={_customScrollArea.onScroll.GetPersistentEventCount()} " +
+            $"max={maxScroll} contentH={content.rect.height} " +
+            $"areaH={((RectTransform)_customScrollArea.transform).rect.height} " +
+            $"speed={bar.ScrollSpeed}");
+    }
+
+    private static void DestroyCustomWindow()
+    {
+        if (_customWindow != null) Object.Destroy(_customWindow);
+        _customWindow = null;
+        _customScrollArea = null;
+        _customScrollR = null;
+    }
 
     private static void WireCloseButton(GameObject window)
     {
