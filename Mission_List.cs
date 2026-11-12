@@ -52,7 +52,7 @@ internal static class MissionList
         "ouroboros",
         "ouroblitz",
         "oxybreach_e",
-        
+
         "perfectfit",
         "containment",
         "exp_alpha",
@@ -246,9 +246,15 @@ internal static class MissionList
         newLayout.constraint = originalLayout.constraint;
         newLayout.constraintCount = originalLayout.constraintCount;
 
+        // These methods create and set up the mission buttons; SetActive alone
+        // does not populate the Replay or Legacy containers.
+        missionWindow.ToggleReplayWindow();
+        missionWindow.replayWindow.SetActive(false);
+        missionWindow.ToggleLegacyWindow();
+        missionWindow.legacyWindow.SetActive(false);
+
         // LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent);
         PopulateCustomWindow(missionWindow, scrollContent);
-
         if (Configs.IsOpenByDefault.Value) OpenCustomWindow();
     }
 
@@ -271,7 +277,7 @@ internal static class MissionList
         }
     }
 
-    internal static void CloseCustomWindow()
+    private static void CloseCustomWindow()
     {
         if (_customWindow != null) _customWindow.SetActive(false);
     }
@@ -376,35 +382,42 @@ internal static class MissionList
             }
         }
 
-        // includes the replay window's missions
-        if (Configs.ReplayMissions.Value)
+        // replay window's missions
+        var replayContainerField = AccessTools.Field(
+            typeof(MissionSelectWindow),
+            "replayMissionContainer"
+        );
+        var replayContainer = replayContainerField?.GetValue(missionWindow) as Transform;
+        if (replayContainer == null)
         {
-            var replayContainerField = AccessTools.Field(
-                typeof(MissionSelectWindow),
-                "replayMissionContainer"
-            );
-            var replayContainer = replayContainerField?.GetValue(missionWindow) as Transform;
-            if (replayContainer == null)
+            Plugin.Logger.LogError("Could not find MissionSelectWindow.replayMissionContainer.");
+        }
+        else
+        {
+            foreach (var replayButton in replayContainer.GetComponentsInChildren<MissionSelectButton>(true))
             {
-                Plugin.Logger.LogError("Could not find MissionSelectWindow.replayMissionContainer.");
-            }
-            else
-            {
-                foreach (var replayButton in replayContainer.GetComponentsInChildren<MissionSelectButton>(true))
-                {
-                    if (!replayButton.gameObject.activeSelf) continue;
+                if (!replayButton.gameObject.activeSelf) continue;
 
-                    var missionData = replayButton.Mission;
-                    if (!FilterMission(missionData.Mission, replayButton) ||
-                        missions.Contains(missionData))
-                        continue;
+                var missionData = replayButton.Mission;
+                if (!FilterMission(missionData.Mission, replayButton) ||
+                    missions.Contains(missionData))
+                    continue;
 
+
+                // stupid goofy aah if statement
+                // NOT add ge_amalgamation , and NOT add groundzero if Configs.WeekliesEnum.HideAll , and NOT add groundzero if Configs.WeekliesEnum.Vanilla AND completedweekly is true, and ALWAYS add groundzero if Configs.WeekliesEnum.HideNone
+                bool isGroundzero = missionData.Mission._missionName == "groundzero";
+                bool includeGroundzero =
+                    Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideNone ||
+                    (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.Vanilla &&
+                     !missionData.Mission.HasCompletedThisWeek());
+                if (missionData.Mission._missionName != "ge_amalgamation" &&
+                    (isGroundzero ? includeGroundzero : Configs.ReplayMissions.Value))
                     missions.Add(missionData);
-                }
             }
         }
 
-        // includes the legacy window's missions
+        // legacy window's missions
         if (Configs.LegacyMissions.Value)
         {
             var legacyContainerField = AccessTools.Field(
@@ -506,13 +519,13 @@ internal static class MissionList
         //     $"same data: {ReferenceEquals(data, otData)}, " +
         //     $"same mission: {ReferenceEquals(data.Mission, otData.Mission)}");
 
-        
-        
+
         if (!Configs.Freeroam.Value && mission._missionName == "freeroam") return false;
         if (!Configs.Incursion.Value && mission._missionName == "incursion") return false;
         if (!Configs.Ouroboros.Value && mission._missionName == "ouroboros") return false;
         if (!Configs.Ouroblitz.Value && mission._missionName == "ouroblitz") return false;
-        if (!Configs.Oxythane.Value && mission._missionName == "oxybreach_e") return false;
+        if (!Configs.OxybreachE.Value && mission._missionName == "oxybreach_e") return false;
+
         // if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
         //     mission.HasCompletedThisWeek()) return false;
         // if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
