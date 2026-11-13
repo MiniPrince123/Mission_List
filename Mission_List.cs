@@ -210,6 +210,11 @@ internal static class MissionList
             return;
         }
 
+        _customScrollBar.GetComponent<BevelRectOutline>().color = Global.UIColor;
+        _customScrollBar.transform.GetChild(0).GetChild(0).GetComponent<BevelRect>().color = Global.UIColor;
+        _customScrollBar.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 775);
+        _customScrollBar.GetComponent<RectTransform>().anchoredPosition = new Vector2(-2, 20);
+
         // Same problem as onScroll: dragging would move the original reward list.
         ClearPersistentListeners(customScrollBar.OnDrag);
         scrollBarField.SetValue(_customScrollArea, customScrollBar);
