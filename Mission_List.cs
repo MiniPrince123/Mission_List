@@ -204,9 +204,9 @@ internal static class MissionList
         // Same problem as onScroll: dragging would move the original reward list.
         ClearPersistentListeners(customScrollBarComp.OnDrag);
         scrollBarField.SetValue(_customScrollArea, customScrollBarComp);
-        Plugin.Logger.LogInfo(
-            $"Cloned 'Scroll R/ScrollRect/ScrollBar' under " +
-            $"'{_customWindow.name}' and assigned it to the ScrollArea.");
+        // Plugin.Logger.LogInfo(
+        //     $"Cloned 'Scroll R/ScrollRect/ScrollBar' under " +
+        //     $"'{_customWindow.name}' and assigned it to the ScrollArea.");
 
 
         // - scrollContent ---------------------------------------------------------------------------------------------
@@ -295,11 +295,11 @@ internal static class MissionList
         if (_customScrollBar != null) _customScrollBar.SetActive(maxScroll > 0f);
         bar.SetScrollY(1f); // 1 = top of the list
 
-        Plugin.Logger.LogInfo(
-            $"scroll: persistent={_customScrollArea.onScroll.GetPersistentEventCount()} " +
-            $"max={maxScroll} contentH={content.rect.height} " +
-            $"areaH={((RectTransform)_customScrollArea.transform).rect.height} " +
-            $"speed={bar.ScrollSpeed}");
+        // Plugin.Logger.LogInfo(
+        //     $"scroll: persistent={_customScrollArea.onScroll.GetPersistentEventCount()} " +
+        //     $"max={maxScroll} contentH={content.rect.height} " +
+        //     $"areaH={((RectTransform)_customScrollArea.transform).rect.height} " +
+        //     $"speed={bar.ScrollSpeed}");
     }
 
     private static void DestroyCustomWindow()
@@ -338,7 +338,7 @@ internal static class MissionList
             path = current.name + "/" + path;
         }
 
-        Plugin.Logger.LogInfo("path : " + path);
+        // Plugin.Logger.LogInfo("path : " + path);
         return path;
     }
 
