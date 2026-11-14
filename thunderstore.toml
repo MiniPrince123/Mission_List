@@ -17,8 +17,8 @@ icon = "icon.png"
 readme = "README.md"
 
 [[build.copy]]
-source = "bin/Release/netstandard2.1/Mission_list.dll"
-target = "BepInEx/plugins/Mission_list.dll"
+source = "bin/Release/netstandard2.1/Mission_List.dll"
+target = "BepInEx/plugins/Mission_List.dll"
 
 [[build.copy]]
 source = "CHANGELOG.md"
@@ -33,4 +33,4 @@ repository = "https://thunderstore.io"
 communities = [ "mycopunk", ]
 
 [publish.categories]
-mycopunk = [ "cosmetic", "client", "qol", "mods"]
+mycopunk = [ "cosmetic", "client", "qol", "mods", ]

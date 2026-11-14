@@ -1,5 +1,8 @@
 # Mission List
 
+<img src="https://raw.githubusercontent.com/MiniPrince123/Mission_List/refs/heads/main/images/example1.jpg" alt="Example image 1: shows what the Mission List looks like in game" width="100%">
+
+
 This mod adds a new Mission List to the mission select screen which shows all the missions available in one single menu
 so you can find the missions you want at a quick glance instead of struggling when rotating the 3D planets.
 
@@ -15,7 +18,7 @@ I'll *probably*™ add more features later on.
 - 🔬 **Mission Visibility Controls**: Hide/show PTO, Incursion, Ouroboros, weeklies, and more
 - 🎨 **Biome-Based Outline Colors**: Optionally color mission outlines based on their biome
 
-## Configurations
+## Configs
 
 | Setting                           | Default Value | Description                                                              |
 |-----------------------------------|---------------|--------------------------------------------------------------------------|
@@ -30,6 +33,11 @@ I'll *probably*™ add more features later on.
 | Completed Weeklies                | `Vanilla`     | How the completed weekly missions are shown.                             |
 | Include Extra Permanent Locations | `false`       | Includes missions from the "Permanent Locations" tab.                    |
 | Include Replay Missions           | `false`       | Includes missions from the "Replay Missions" tab.                        |
+
+## Screenshots
+
+<img src="https://raw.githubusercontent.com/MiniPrince123/Mission_List/refs/heads/main/images/example2.jpg" alt="Example image 2" width="49%">
+<img src="https://raw.githubusercontent.com/MiniPrince123/Mission_List/refs/heads/main/images/example3.jpg" alt="Example image 3" width="49%">
 
 ## Help Needed ?
 

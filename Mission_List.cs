@@ -1,18 +1,14 @@
-using System.Reflection;
 using System.Reflection.Emit;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.Events;
-using BepInEx;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using Pigeon.Movement;
 using Pigeon.UI;
 using UnityEngine.UI;
-using UnityEngine.UIElements;
 using Image = UnityEngine.UI.Image;
-using Rect = Pigeon.UI.Rect;
 
 namespace MyMycoModRoot;
 
@@ -202,8 +198,6 @@ internal static class MissionList
         }
 
         // changes the custom scrollbar's appearance
-        _customScrollBar.GetComponent<BevelRectOutline>().color = Global.UIColor;
-        _customScrollBar.transform.GetChild(0).GetChild(0).GetComponent<BevelRect>().color = Global.UIColor;
         _customScrollBar.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 775);
         _customScrollBar.GetComponent<RectTransform>().anchoredPosition = new Vector2(-2, 20);
 
@@ -278,6 +272,8 @@ internal static class MissionList
             (RectTransform)_customWindow.transform,
             Global.UIColor
         );
+        _customScrollBar.GetComponent<BevelRectOutline>().color = Global.UIColor;
+        _customScrollBar.transform.GetChild(0).GetChild(0).GetComponent<BevelRect>().color = Global.UIColor;
     }
 
 
