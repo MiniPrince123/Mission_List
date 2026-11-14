@@ -1,3 +1,27 @@
+RectTransform.anchoredPosition = (0,0) : offset ?
+RectTransform.anchorMax = (1,1) : ratio of topright
+RectTransform.anchorMin = (0,0) : ratio of bottomleft
+RectTransform.offsetMax = (-1.5,-1.5) : nb of pixels +- offset of topright
+RectTransform.offsetMin = (1.5,1.5) : nb of pixels +- offset of bottomleft
+RectTransform.pivot = (0.5,0.5) : overall offset ?
+RectTransform.sizeDelta = (-3,-3) : local size ?
+
+
+
+// Plugin.Logger.LogInfo("region.NameID : "+activeMission.Button.Mission.Region.NameID); // moon
+// Plugin.Logger.LogInfo("region.RegionName : "+activeMission.Button.Mission.Region.RegionName); // Moonscape
+// Plugin.Logger.LogInfo("region.GetName() : "+activeMission.Button.Mission.Region.GetName()); // Moon (this)
+
+
+Plugin.Logger.LogInfo("Mission.MissionType : " + activeMission.Button.mission.Mission.MissionType); //SuperDonkeyKongCountry
+Plugin.Logger.LogInfo("Mission._missionName : " + activeMission.Button.mission.Mission._missionName); //sax_transport (this)
+Plugin.Logger.LogInfo("Mission.MissionName : " + activeMission.Button.mission.Mission.MissionName); //Saxonite Transport
+
+
+
+
+colors :
+
 PlanetaryDefense                    RGBA(0.781, 1.000, 1.000, 1.000)
 ResearchRampage                     RGBA(1.000, 0.035, 1.000, 1.000)
 CleanupDetail                       RGBA(1.000, 1.000, 0.643, 1.000)
@@ -23,9 +47,6 @@ Oxythane-Logo-(White)               RGBA(0.5189, 0.8528, 1.000, 1.000) (oxy norm
 error modifier icon                 RGBA(0.7925, 0.0274, 0.1874, 1.000)
 couch icon                          RGBA(1.000, 0.5098, 0.7073, 1.000)
 mycologist                          RGBA(0.8627, 0.3176, 1.000, 1.000)
-
-
-
 
 
 

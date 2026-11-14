@@ -7,7 +7,6 @@ internal static class Configs
     internal enum SortMethod { Biome, ModifierCount, MissionType }
     internal enum WeekliesEnum { Vanilla, HideAll, HideNone }
 
-    public static ConfigEntry<bool> Enabled { get; private set; }
     public static ConfigEntry<SortMethod> SortBy { get; private set; }
     public static ConfigEntry<bool> IsOpenByDefault { get; private set; }
     public static ConfigEntry<bool> BiomeIconsColor { get; private set; }
@@ -46,33 +45,33 @@ internal static class Configs
         
         Freeroam = configFile.Bind<bool>(
             "Missions Visibility",
-            "PTO",
+            "Paid Time Off",
             true,
-            "Includes PTO.");
+            "Includes Paid Time Off in the Mission List.");
         
         Incursion = configFile.Bind<bool>(
             "Missions Visibility",
             "Incursion",
             true,
-            "Includes Incursion.");
+            "Includes Incursion in the Mission List.");
         
         Ouroboros = configFile.Bind<bool>(
             "Missions Visibility",
             "Ouroboros",
             false,
-            "Includes Ouroboros.");
+            "Includes Ouroboros in the Mission List.");
         
         Ouroblitz = configFile.Bind<bool>(
             "Missions Visibility",
-            "Ouroblitz",
+            "Ouroboros Blitz",
             false,
-            "Includes Ouroboros Blitz.");
+            "Includes Ouroboros Blitz in the Mission List.");
         
         OxybreachE = configFile.Bind<bool>(
             "Missions Visibility",
             "Oxythane Breach: Escalation",
             false,
-            "Includes Oxythane Breach: Escalation.");
+            "Includes Oxythane Breach: Escalation in the Mission List.");
         
         WeekliesVisibility = configFile.Bind<WeekliesEnum>(
             "Missions Visibility",
@@ -84,12 +83,12 @@ internal static class Configs
             "Missions Visibility",
             "Include Extra Permanent Locations",
             false,
-            "Includes the \"PERMANENT LOCATIONS\"' missions to the Mission List.");
+            "Includes the \"Permanent Locations\" missions to the Mission List.");
         
         ReplayMissions = configFile.Bind<bool>(
             "Missions Visibility",
             "Include Replay Missions",
             false,
-            "Includes the \"REPLAY MISSIONS\"' missions to the Mission List.");
+            "Includes the \"Replay Missions\" missions to the Mission List.");
     }
 }

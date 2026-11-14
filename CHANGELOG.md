@@ -2,10 +2,11 @@
 
 
 ## 1.0.0
-2026-10-30
+2026-11-14
 
 ### Features
 
-- **Side Objectives Always Revealed:** Reveals what each side objective is without having to get close to it
-- **Locked Minimap Rotation:** Locks the minimap's rotation, keeping north always facing up
-- **Minimap Zoom:** Adjustable minimap zoom level to your preference
+- **Better Mission Discovery**: Browse all available missions in one convenient menu
+- **Custom Sorting**: Sort missions by Mission Type, Biome, or Modifier Count
+- **Mission Visibility Controls**: Hide/show PTO, Incursion, Ouroboros, weeklies, and more
+- **Biome-Based Outline Colors**: Optionally color mission outlines based on their biome

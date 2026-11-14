@@ -4,7 +4,7 @@ schemaVersion = "0.0.1"
 [package]
 namespace = "MiniPrince123"
 name = "Mission_list"
-description = "Adds a few QoL features to the minimap."
+description = "Adds a Mission List to the mission select screen which shows all the missions available in one single menu."
 websiteUrl = "https://github.com/MiniPrince123/Mission_list"
 containsNsfwContent = false
 

@@ -72,14 +72,15 @@ internal static class MissionList
         var replayButtonField = AccessTools.Field(typeof(MissionSelectWindow), "replayButton");
         var replayButton = (GameObject)replayButtonField.GetValue(__instance);
 
-        Plugin.Logger.LogInfo("replayButtonField : " + replayButtonField);
-        Plugin.Logger.LogInfo("replayButtonField.Name : " + replayButtonField.Name);
-        Plugin.Logger.LogInfo("replayButton : " + replayButton);
-        Plugin.Logger.LogInfo("replayButton.name : " + replayButton.name);
-
         if (replayButton == null)
         {
             Plugin.Logger.LogError("Could not find replayButton.");
+            return;
+        }
+
+        if (!replayButton.activeSelf) // only for lvl 1 people
+        {
+            Plugin.Logger.LogError("replayButton.activeSelf == false.");
             return;
         }
 
@@ -140,9 +141,6 @@ internal static class MissionList
         var originalContainer = (RectTransform)originalContainerField.GetValue(missionWindow);
         var _customContainer = FindClone(originalContainer, legacyWindow, _customWindow);
         _customContainer.name = "_customContainer"; // was CustomBKG
-        // changes the "margin" of the mission buttons in the window
-        // 76.0f is too much. couldn't care enough to test decimals
-        _customContainer.GetComponent<UnityEngine.UI.GridLayoutGroup>().spacing = new Vector2(75.0f, 75.0f);
 
 
         // - ScrollArea ------------------------------------------------------------------------------------------------
@@ -171,14 +169,6 @@ internal static class MissionList
 
 
         // - ScrollBar -------------------------------------------------------------------------------------------------
-        // ScrollBar originalScrollBar0 = originalScrollArea.ScrollBar;
-        // Plugin.Logger.LogInfo("SCROLLAREA PARENT : " + originalScrollArea.transform.parent.GetName());
-        // Plugin.Logger.LogInfo(
-        //     $"Original ScrollArea '{originalScrollArea.name}': ScrollBar is null = " +
-        //     $"{originalScrollBar0 == null}; value = {originalScrollBar0}; " +
-        //     $"type = {originalScrollBar0?.GetType().FullName ?? "null"}");
-
-
         // TODO make originalScrollBar be an actual ScrollBar so i can make my code cleaner
         var originalScrollBar = originalScrollArea.transform.parent.Find("Scroll R");
         // this should never happen(?)
@@ -196,11 +186,12 @@ internal static class MissionList
         _customScrollBar.name = "_customScrollBar";
         // The game hides 'Scroll R' when the info list fits; the clone copies that.
         _customScrollBar.SetActive(true);
-        var customScrollBar = _customScrollBar
+        ScrollBar customScrollBarComp = _customScrollBar
             .transform.Find("ScrollRect/ScrollBar")
             ?.GetComponent<ScrollBar>();
+        // ^ could be instead : ScrollBar customScrollBarComp = _customScrollBar.transform.GetChild(0).GetChild(0).GetComponent<ScrollBar>();
         var scrollBarField = AccessTools.Field(typeof(ScrollArea), "scrollBar");
-        if (customScrollBar == null || scrollBarField == null)
+        if (customScrollBarComp == null || scrollBarField == null)
         {
             // Do not continue: the ScrollArea would drive the original window's bar.
             Plugin.Logger.LogError(
@@ -210,19 +201,21 @@ internal static class MissionList
             return;
         }
 
+        // changes the custom scrollbar's appearance
         _customScrollBar.GetComponent<BevelRectOutline>().color = Global.UIColor;
         _customScrollBar.transform.GetChild(0).GetChild(0).GetComponent<BevelRect>().color = Global.UIColor;
         _customScrollBar.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 775);
         _customScrollBar.GetComponent<RectTransform>().anchoredPosition = new Vector2(-2, 20);
 
         // Same problem as onScroll: dragging would move the original reward list.
-        ClearPersistentListeners(customScrollBar.OnDrag);
-        scrollBarField.SetValue(_customScrollArea, customScrollBar);
+        ClearPersistentListeners(customScrollBarComp.OnDrag);
+        scrollBarField.SetValue(_customScrollArea, customScrollBarComp);
         Plugin.Logger.LogInfo(
             $"Cloned 'Scroll R/ScrollRect/ScrollBar' under " +
             $"'{_customWindow.name}' and assigned it to the ScrollArea.");
 
 
+        // - scrollContent ---------------------------------------------------------------------------------------------
         var scrollContent = _customScrollArea.transform.Find("ScrollContent") as RectTransform;
         if (scrollContent == null)
         {
@@ -231,34 +224,23 @@ internal static class MissionList
         }
 
         _customScrollArea.ItemContainer = scrollContent;
-
         var originalLayout = _customContainer.GetComponent<GridLayoutGroup>();
         var newLayout = scrollContent.GetComponent<GridLayoutGroup>();
-
         if (newLayout == null) newLayout = scrollContent.gameObject.AddComponent<GridLayoutGroup>();
-
-        newLayout.padding = new RectOffset(
-            originalLayout.padding.left,
-            originalLayout.padding.right,
-            originalLayout.padding.top,
-            originalLayout.padding.bottom
-        );
+        newLayout.padding = originalLayout.padding;
         newLayout.cellSize = originalLayout.cellSize;
-        newLayout.spacing = originalLayout.spacing;
-        newLayout.startCorner = originalLayout.startCorner;
-        newLayout.startAxis = originalLayout.startAxis;
-        newLayout.childAlignment = originalLayout.childAlignment;
-        newLayout.constraint = originalLayout.constraint;
-        newLayout.constraintCount = originalLayout.constraintCount;
+        // changes the "margin" of the mission buttons in the window
+        // 76.0f is too much. too lazy to test decimals
+        newLayout.spacing = new Vector2(75.0f, 75.0f);
 
-        // These methods create and set up the mission buttons; SetActive alone
-        // does not populate the Replay or Legacy containers.
+
+        // -------------------------------------------------------------------------------------------------------------
+        // "opens and closes" replay and legacy so that their missions are created and can be put inside my custom window
         missionWindow.ToggleReplayWindow();
-        missionWindow.replayWindow.SetActive(false);
+        missionWindow.ToggleReplayWindow();
         missionWindow.ToggleLegacyWindow();
-        missionWindow.legacyWindow.SetActive(false);
+        missionWindow.ToggleLegacyWindow();
 
-        // LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent);
         PopulateCustomWindow(missionWindow, scrollContent);
         if (Configs.IsOpenByDefault.Value) OpenCustomWindow();
     }
@@ -373,6 +355,8 @@ internal static class MissionList
         var missions = new List<MissionData>();
         foreach (var planet in missionWindow.planets)
         {
+            // if the player hasnt unlocked x11b, skip the missions
+            if (planet.planetReference.IsLocked()) continue;
             foreach (var activeMission in planet.activeMissions.Data)
             {
                 if (activeMission.Button == null ||
@@ -394,9 +378,7 @@ internal static class MissionList
         );
         var replayContainer = replayContainerField?.GetValue(missionWindow) as Transform;
         if (replayContainer == null)
-        {
             Plugin.Logger.LogError("Could not find MissionSelectWindow.replayMissionContainer.");
-        }
         else
         {
             foreach (var replayButton in replayContainer.GetComponentsInChildren<MissionSelectButton>(true))
@@ -431,9 +413,7 @@ internal static class MissionList
             );
             var legacyContainer = legacyContainerField?.GetValue(missionWindow) as Transform;
             if (legacyContainer == null)
-            {
                 Plugin.Logger.LogError("Could not find MissionSelectWindow.legacyMissionContainer.");
-            }
             else
             {
                 foreach (var legacyButton in legacyContainer.GetComponentsInChildren<MissionSelectButton>(true))
@@ -505,14 +485,14 @@ internal static class MissionList
     private static bool FilterMission(Mission mission, object source)
     {
         // Plugin.Logger.LogInfo("region.GetName() : " + missionData.Region.GetName()); // Moon (this)
-        Plugin.Logger.LogInfo("Mission._missionName : " +
-                              mission._missionName); //sax_transport
-        Plugin.Logger.LogInfo("Mission.completedweekly : " +
-                              mission
-                                  .HasCompletedThisWeek());
-        Plugin.Logger.LogInfo(
-            mission ==
-            Mission.GetMissionData(Global.Instance.OvertimeAssignment).Mission);
+        // Plugin.Logger.LogInfo("Mission._missionName : " +
+        //                       mission._missionName); //sax_transport
+        // Plugin.Logger.LogInfo("Mission.completedweekly : " +
+        //                       mission
+        //                           .HasCompletedThisWeek());
+        // Plugin.Logger.LogInfo(
+        //     mission ==
+        //     Mission.GetMissionData(Global.Instance.OvertimeAssignment).Mission);
         // Plugin.Logger.LogInfo(
         //     $"mission data container: {missionData.Container?.GetType().Name ?? "null"}; " +
         //     $"mission source: {activeMission.Source?.GetType().Name ?? "null"}; " +
@@ -530,14 +510,6 @@ internal static class MissionList
         if (!Configs.Ouroboros.Value && mission._missionName == "ouroboros") return false;
         if (!Configs.Ouroblitz.Value && mission._missionName == "ouroblitz") return false;
         if (!Configs.OxybreachE.Value && mission._missionName == "oxybreach_e") return false;
-
-        // if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
-        //     mission.HasCompletedThisWeek()) return false;
-        // if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll &&
-        //     mission.ResetWeekly &&
-        //     mission.HasCompletedThisWeek())
-        //     return false;
-
         if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideAll)
         {
             if (mission.HasCompletedThisWeek())
@@ -545,12 +517,8 @@ internal static class MissionList
                 // OT
                 if (source is MissionSelectButton && OtButtons.Contains(source)) return false;
                 // Amalgam...
-                else if (mission.ResetWeekly) return false;
+                if (mission.ResetWeekly) return false;
             }
-        }
-        else if (Configs.WeekliesVisibility.Value == Configs.WeekliesEnum.HideNone)
-        {
-            //  todo
         }
 
         return true;
@@ -684,23 +652,13 @@ internal static class MissionList
     internal static void TrackOtButton(MissionContainer missionContainer, MissionSelectButton button)
     {
         if (missionContainer == Global.Instance.OvertimeAssignment) OtButtons.Add(button);
-        // else OtButtons.Remove(button);
     }
-
-    // internal static void ClearOtButtons() { OtButtons.Clear(); }
 }
 
 // tf is that
 [HarmonyPatch]
 internal static class OtTrackingPatches
 {
-    // [HarmonyPatch(typeof(MissionSelectWindow), "OnOpen")]
-    // [HarmonyPrefix]
-    // private static void OnOpenPrefix()
-    // {
-    //     MissionList.ClearOtButtons();
-    // }
-
     [HarmonyPatch(typeof(MissionSelectWindow), "SetupMission")]
     [HarmonyPostfix]
     private static void SetupMissionPostfix(
